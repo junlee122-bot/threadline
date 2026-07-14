@@ -2,6 +2,8 @@
 
 > **Every signal, traced to source.**
 
+Threadline now includes the original **FAULTLINE — Incident Commander** as **Crisis Lab**. The operational product explains what happened in a real incident; the training twin lets a user command a separate cache-stampede scenario, see each intervention change the live system model, and receive a scored after-action review.
+
 Threadline is an evidence-native software intelligence command center. It connects intent, code, deployments, runtime telemetry, and customer impact into one time-aware causal thread—then puts human approval and recovery verification around AI-proposed actions.
 
 [![CI](https://github.com/junlee122-bot/something/actions/workflows/ci.yml/badge.svg)](https://github.com/junlee122-bot/something/actions/workflows/ci.yml)
@@ -42,6 +44,10 @@ Open `/incidents/inc-2471` and use the replay controls to watch the graph, metri
 
 The command and incident surfaces begin at the investigating snapshot so the interaction can be replayed; Agents and Reports preserve the verified 09:40 outcome of that same thread.
 
+### The Crisis Lab story
+
+Open `/lab` to run FAULTLINE scenario 047: an eight-minute cache-stampede incident with six decision gates, 18 production actions, three endings, live topology and telemetry, keyboard controls, and a downloadable after-action report. The model is deterministic, so equal decisions always produce equal outcomes.
+
 ## Product surfaces
 
 | Route | Experience |
@@ -50,6 +56,7 @@ The command and incident surfaces begin at the investigating snapshot so the int
 | `/command` | Evidence-backed briefing, pulse metrics, causal graph, attention queue |
 | `/incidents` | Active and historical incident operating view |
 | `/incidents/inc-2471` | Time replay, synchronized telemetry, evidence inspector, safe mitigation |
+| `/lab` | FAULTLINE crisis simulation, six command gates, live system model, scored debrief |
 | `/map` | Interactive service topology with health/change/ownership modes |
 | `/changes` | Searchable, explainable change-risk intelligence |
 | `/agents` | Agent mission control with inspectable steps and approvals |
@@ -64,6 +71,7 @@ Global `⌘/Ctrl K` opens a command palette from every product route.
 - Next.js 16 App Router and React 19
 - Server Components by default; focused Client Component islands for replay, graph selection, filters, and dialogs
 - TypeScript strict mode with a typed domain model and deterministic fixtures
+- Deterministic incident simulation engine with bounded interventions, causal dynamics, canonical scoring, and three endings
 - Tailwind CSS v4 with a custom token system and Geist typography
 - Accessible SVG/data visualization with timeline and table alternatives
 - Native dialog semantics for command and approval flows
@@ -110,6 +118,7 @@ flowchart LR
   Graph --> Insight["Labeled AI insights"]
   Metrics --> Insight
   Insight --> UI["Next.js command center"]
+  TrainingTwin["FAULTLINE Crisis Lab"] --> UI
   UI --> Approval["Human approval boundary"]
   Approval --> Verify["Action + recovery verification"]
 ```

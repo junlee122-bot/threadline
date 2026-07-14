@@ -2,6 +2,21 @@
 
 All notable changes to Threadline are documented here.
 
+## 0.2.0 — 2026-07-15
+
+### Product
+
+- Integrated FAULTLINE into Threadline as the new `/lab` Crisis Lab surface.
+- Added an eight-minute deterministic cache-stampede scenario with six decision gates, 18 actions, and three endings.
+- Added live system health, service topology, rolling telemetry, evidence, event console, keyboard controls, and variable simulation speed.
+- Added canonical after-action scoring and downloadable Markdown reports.
+- Connected Crisis Lab from the marketing page, command center, command menu, navigation, PWA shortcuts, and sitemap.
+
+### Engineering
+
+- Added a pure bounded simulation engine and comprehensive invariant tests.
+- Preserved the existing operational incident experience while giving the former standalone simulator a product-level home.
+
 ## 0.1.0 — 2026-07-14
 
 ### Product

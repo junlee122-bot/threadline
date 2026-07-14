@@ -5,6 +5,7 @@ import {
   ArrowRight,
   Bot,
   Check,
+  Gamepad2,
   GitCommitHorizontal,
   Github,
   RadioTower,
@@ -18,7 +19,7 @@ import { HeroThread } from "@/components/marketing/hero-thread";
 export const metadata: Metadata = {
   title: "Every signal, traced to source",
   description:
-    "Threadline connects code, deployments, telemetry, and customer impact into one evidence-backed command center.",
+    "Threadline connects software operations with an evidence-backed command center and a playable incident training lab.",
 };
 
 const features = [
@@ -39,6 +40,12 @@ const features = [
     label: "Safe operations",
     title: "Preview, approve, then verify",
     copy: "Agent actions expose target, blast radius, rollback plan, approver, and success criteria before they run.",
+  },
+  {
+    icon: Gamepad2,
+    label: "Crisis Lab",
+    title: "Practice the failure before it is real",
+    copy: "Command a deterministic eight-minute incident with six decisions, live system dynamics, and a scored after-action review.",
   },
 ];
 
@@ -61,6 +68,7 @@ export default function Home() {
           <a href="#product" className="transition-colors hover:text-foreground">Product</a>
           <a href="#principles" className="transition-colors hover:text-foreground">Principles</a>
           <a href="#story" className="transition-colors hover:text-foreground">Live story</a>
+          <Link href="/lab" className="transition-colors hover:text-foreground">Crisis Lab</Link>
           <a href="https://github.com/junlee122-bot/something" className="transition-colors hover:text-foreground">GitHub</a>
         </nav>
         <Link
@@ -103,6 +111,13 @@ export default function Home() {
               >
                 Open command center
               </Link>
+              <Link
+                href="/lab"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-danger/25 bg-danger/[0.045] px-5 text-sm font-medium text-danger transition-colors hover:bg-danger/[0.075] sm:w-auto"
+              >
+                Run Crisis Lab
+                <Gamepad2 aria-hidden="true" className="size-4" />
+              </Link>
             </div>
           </div>
 
@@ -137,7 +152,7 @@ export default function Home() {
                 Threadline keeps source evidence and AI interpretation separate, then places both on the same time-aware graph.
               </p>
             </div>
-            <div className="mt-14 grid gap-px overflow-hidden rounded-xl border border-border bg-border lg:grid-cols-3">
+            <div className="mt-14 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 xl:grid-cols-4">
               {features.map((feature) => {
                 const Icon = feature.icon;
                 return (
@@ -227,6 +242,9 @@ export default function Home() {
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link href="/command" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground">
                   Enter Threadline <ArrowRight aria-hidden="true" className="size-4" />
+                </Link>
+                <Link href="/lab" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-danger/25 px-5 text-sm font-medium text-danger hover:bg-danger/[0.04]">
+                  <Gamepad2 aria-hidden="true" className="size-4" /> Run Crisis Lab
                 </Link>
                 <a href="https://github.com/junlee122-bot/something" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-border-strong px-5 text-sm font-medium hover:bg-white/[0.035]">
                   <Github aria-hidden="true" className="size-4" /> View source

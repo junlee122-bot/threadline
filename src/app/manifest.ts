@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Threadline - Evidence-native software intelligence",
     short_name: "Threadline",
     description:
-      "Trace code, deployments, runtime signals, and customer impact through one evidence-backed operational thread.",
+      "Trace software impact through one evidence-backed operational thread, then practice recovery in Crisis Lab.",
     start_url: "/command",
     scope: "/",
     display: "standalone",
@@ -31,6 +31,13 @@ export default function manifest(): MetadataRoute.Manifest {
         short_name: "Incident",
         description: "Replay the active checkout incident.",
         url: "/incidents/inc-2471",
+        icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml" }],
+      },
+      {
+        name: "Crisis Lab",
+        short_name: "Lab",
+        description: "Run the FAULTLINE 047 incident simulation.",
+        url: "/lab",
         icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml" }],
       },
     ],

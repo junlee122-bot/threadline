@@ -9,6 +9,7 @@ Threadline is an evidence-native software intelligence concept. The demo is inte
 3. Make the portfolio demo reproducible offline and safe to explore.
 4. Render meaningful HTML on the server; ship JavaScript only for interactions.
 5. Make every graph interaction available as text, timeline, or table.
+6. Reuse the same evidence language for deterministic incident training.
 
 ## Runtime shape
 
@@ -35,6 +36,7 @@ Routes are statically renderable. Interactive components receive serializable da
 | `/command` | Server + client island | Live briefing, causal thread, attention queue |
 | `/incidents` | Server | Incident history and operating metrics |
 | `/incidents/inc-2471` | Static param + client island | Replay, evidence inspection, approved mitigation |
+| `/lab` | Server shell + client simulation island | FAULTLINE training twin, command gates, debrief |
 | `/map` | Server + client island | Service topology and health modes |
 | `/changes` | Server + client island | Explainable change-risk review |
 | `/agents` | Server + client island | Agent run observation and approval state |
@@ -69,6 +71,15 @@ idle → human review → executing → verifying → completed
 ```
 
 The portfolio demo implements the successful path. The product specification preserves failure and rollback states for a real backend.
+
+The Crisis Lab has a separate deterministic state machine:
+
+```text
+briefing -> simulation clock -> decision gate 1..6 -> result scoring -> after-action report
+                         \-> intervention modifiers -> next causal snapshot
+```
+
+The simulation engine is pure: elapsed time and accumulated bounded modifiers produce the complete service, metric, impact, and topology snapshot. Result scoring resolves choices against canonical scenario data rather than trusting UI records.
 
 ## Production evolution
 

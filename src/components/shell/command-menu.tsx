@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Bot,
   ChartNoAxesCombined,
+  Gamepad2,
   GitPullRequest,
   LayoutDashboard,
   Map,
@@ -17,6 +18,7 @@ const commands = [
   { label: "Inspect system map", detail: "8 services · 12 dependencies", href: "/map", icon: Map, keywords: "topology service" },
   { label: "Review risky changes", detail: "3 need attention", href: "/changes", icon: GitPullRequest, keywords: "pull request deploy" },
   { label: "Open INC-2471", detail: "Checkout latency elevated", href: "/incidents/inc-2471", icon: Siren, keywords: "incident sev2 checkout" },
+  { label: "Run FAULTLINE 047", detail: "8-minute crisis simulation", href: "/lab", icon: Gamepad2, keywords: "crisis lab training simulation cache stampede" },
   { label: "View agent mission control", detail: "2 active runs", href: "/agents", icon: Bot, keywords: "ai runs approval" },
   { label: "Open weekly report", detail: "Reliability & delivery", href: "/reports", icon: ChartNoAxesCombined, keywords: "dora slo" },
 ];

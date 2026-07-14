@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Bot,
   ChartNoAxesCombined,
+  Gamepad2,
   GitPullRequest,
   LayoutDashboard,
   Map,
@@ -19,6 +20,7 @@ const navigation = [
   { label: "System map", href: "/map", icon: Map },
   { label: "Changes", href: "/changes", icon: GitPullRequest },
   { label: "Incidents", href: "/incidents", icon: Siren },
+  { label: "Crisis Lab", href: "/lab", icon: Gamepad2 },
   { label: "Agent runs", href: "/agents", icon: Bot },
   { label: "Reports", href: "/reports", icon: ChartNoAxesCombined },
 ];
@@ -108,7 +110,7 @@ export function AppNav() {
               )}
             >
               <Icon aria-hidden="true" className="size-[18px]" strokeWidth={1.7} />
-              {item.label === "Agent runs" ? "Agents" : item.label.split(" ")[0]}
+              {item.label === "Agent runs" ? "Agents" : item.label === "Crisis Lab" ? "Lab" : item.label.split(" ")[0]}
             </Link>
           );
         })}

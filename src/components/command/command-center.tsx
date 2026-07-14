@@ -12,6 +12,7 @@ import {
   Code2,
   ExternalLink,
   FileSearch,
+  Gamepad2,
   GitCommitHorizontal,
   GitPullRequest,
   MoreHorizontal,
@@ -140,7 +141,10 @@ export function CommandCenter() {
               <div className="mt-5 grid grid-cols-2 gap-2"><MiniStat label="p95 latency" value="1.84 s" tone="danger" /><MiniStat label="SLO burn" value="8.4×" tone="warning" /></div>
               <Sparkline points={[0.68,0.7,0.69,0.74,1.1,1.84,1.78,1.7]} tone="danger" label="Checkout p95 latency rose sharply" className="mt-4 h-14" />
             </div>
-            <Link href="/incidents/inc-2471" className="flex min-h-11 items-center justify-between border-t border-border px-5 text-[10px] text-muted hover:bg-white/[0.025] hover:text-foreground">Open Incident Room<ArrowRight aria-hidden="true" className="size-3.5" /></Link>
+            <div className="grid grid-cols-2 border-t border-border">
+              <Link href="/incidents/inc-2471" className="flex min-h-11 items-center justify-center gap-2 px-3 text-[10px] text-muted hover:bg-white/[0.025] hover:text-foreground">Incident Room<ArrowRight aria-hidden="true" className="size-3.5" /></Link>
+              <Link href="/lab" className="flex min-h-11 items-center justify-center gap-2 border-s border-border px-3 text-[10px] text-danger hover:bg-danger/[0.035]"><Gamepad2 aria-hidden="true" className="size-3.5" />Train scenario</Link>
+            </div>
           </article>
         </section>
       )}

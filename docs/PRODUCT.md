@@ -2,7 +2,7 @@
 
 ## One sentence
 
-Threadline connects code, deployments, telemetry, and customer impact into an evidence-backed command center where teams can understand change and approve safe remediation.
+Threadline connects code, deployments, telemetry, and customer impact into an evidence-backed command center where teams can understand change, approve safe remediation, and practice high-pressure judgment in a deterministic crisis lab.
 
 ## Problem
 
@@ -77,6 +77,10 @@ Open `/changes`, filter by explainable risk, inspect downstream impact and test 
 ### Weekly review
 
 Open `/reports` to evaluate delivery and reliability together: DORA metrics, SLO status, customer impact, and the week's operating narrative.
+
+### Crisis training
+
+Open `/lab` to command FAULTLINE scenario 047. The eight-minute training twin pauses at six decision gates, applies every intervention to a shared causal model, and scores the final outcome against system health, decision accuracy, impact, and recovery time. The after-action report reveals the rationale only after each decision has been made.
 
 ## Success measures for a real product
 
