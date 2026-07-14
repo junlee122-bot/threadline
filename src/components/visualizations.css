@@ -1,0 +1,842 @@
+.service-map,
+.telemetry-chart {
+  --visual-surface: var(--ink-1, rgba(9, 14, 22, 0.88));
+  --visual-surface-raised: var(--ink-2, rgba(18, 25, 36, 0.82));
+  --visual-border: var(--line, rgba(140, 164, 194, 0.17));
+  --visual-border-strong: var(--line-bright, rgba(160, 188, 219, 0.28));
+  --visual-grid: rgba(131, 159, 191, 0.08);
+  --visual-text: var(--text, #eef5fb);
+  --visual-muted: var(--text-secondary, #7e90a5);
+  --visual-faint: var(--text-muted, #536276);
+  --status-color: var(--mint, #54e8bd);
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  color: var(--visual-text);
+  border: 1px solid var(--visual-border);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(16, 23, 27, 0.92), rgba(5, 8, 10, 0.96)),
+    var(--visual-surface);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 24px 70px rgba(0, 0, 0, 0.2);
+  isolation: isolate;
+}
+
+.service-map::before,
+.telemetry-chart::before {
+  position: absolute;
+  z-index: -1;
+  inset: -45% 38% 45% -20%;
+  content: '';
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(67, 180, 255, 0.11), transparent 68%);
+  pointer-events: none;
+}
+
+.service-map *,
+.telemetry-chart * {
+  box-sizing: border-box;
+}
+
+.service-map h2,
+.telemetry-chart h2 {
+  margin: 2px 0 0;
+  color: var(--visual-text);
+  font: 600 0.83rem/1.15 var(--sans, system-ui, sans-serif);
+  letter-spacing: -0.01em;
+}
+
+.visual-heading {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+  text-align: left;
+}
+
+.visual-heading__icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #83d7ff;
+  border: 1px solid rgba(111, 196, 239, 0.24);
+  border-radius: 9px;
+  background: rgba(69, 166, 218, 0.08);
+  box-shadow: inset 0 0 18px rgba(73, 187, 242, 0.06);
+}
+
+.visual-eyebrow {
+  display: block;
+  color: var(--visual-muted);
+  font: 600 0.56rem/1 var(--mono, ui-monospace, monospace);
+  letter-spacing: 0.16em;
+}
+
+.visual-sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Service topology */
+
+.service-map__header,
+.telemetry-chart__header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--visual-border);
+  background: rgba(10, 15, 24, 0.55);
+  backdrop-filter: blur(14px);
+}
+
+.service-map__legend {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 0;
+  margin: 0;
+  color: var(--visual-muted);
+  list-style: none;
+  font: 600 0.55rem/1 var(--mono, ui-monospace, monospace);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.service-map__legend li {
+  --status-color: #54e8bd;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.service-map__legend li > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--status-color);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--status-color) 70%, transparent);
+}
+
+.service-map__canvas {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-color: rgba(111, 139, 170, 0.35) transparent;
+  scrollbar-width: thin;
+}
+
+.service-map__svg {
+  display: block;
+  width: 100%;
+  min-width: 630px;
+  max-height: 350px;
+  height: auto;
+  margin: 0 auto;
+  font-family: var(--sans, system-ui, sans-serif);
+}
+
+.service-map__grid {
+  opacity: 0.7;
+}
+
+.service-map__grid-line {
+  fill: none;
+  stroke: var(--visual-grid);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.service-link {
+  --status-color: #54e8bd;
+}
+
+.service-link__rail,
+.service-link__flow {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.service-link__rail {
+  stroke: rgba(111, 133, 160, 0.27);
+  stroke-width: 6;
+}
+
+.service-link__flow {
+  stroke: var(--status-color);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 4 8;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--status-color) 70%, transparent));
+  animation: service-flow 1.15s linear infinite;
+}
+
+.service-link.status-critical .service-link__flow {
+  stroke-width: 2.2;
+  animation-duration: 0.62s;
+}
+
+.service-link.status-degraded .service-link__flow {
+  animation-duration: 1.65s;
+}
+
+.service-link.status-recovering .service-link__flow {
+  animation-direction: reverse;
+}
+
+.service-link__arrow {
+  --status-color: #54e8bd;
+  fill: var(--status-color);
+  filter: drop-shadow(0 0 3px var(--status-color));
+}
+
+.service-link__label rect {
+  fill: rgba(8, 13, 20, 0.94);
+  stroke: color-mix(in srgb, var(--status-color) 38%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.service-link__label text {
+  fill: var(--status-color);
+  font: 700 8px/1 var(--mono, ui-monospace, monospace);
+  letter-spacing: 0.04em;
+}
+
+.service-node {
+  --status-color: #54e8bd;
+  outline: none;
+}
+
+.service-node[role='button'] {
+  cursor: pointer;
+}
+
+.service-node__shell {
+  fill: rgba(13, 20, 30, 0.96);
+  stroke: color-mix(in srgb, var(--status-color) 58%, #536276);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 7px 11px rgba(0, 0, 0, 0.3));
+  transition: fill 160ms ease, stroke-width 160ms ease, filter 160ms ease;
+}
+
+.service-node[role='button']:hover .service-node__shell,
+.service-node.is-selected .service-node__shell {
+  fill: rgba(20, 30, 43, 0.98);
+  stroke-width: 1.8;
+  filter:
+    drop-shadow(0 8px 12px rgba(0, 0, 0, 0.32))
+    drop-shadow(0 0 9px color-mix(in srgb, var(--status-color) 42%, transparent));
+}
+
+.service-node__pulse,
+.service-node__focus-outline {
+  fill: none;
+  stroke: var(--status-color);
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.service-node__pulse {
+  opacity: 0;
+  stroke-width: 1;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.service-node.status-critical .service-node__pulse,
+.service-node.status-recovering .service-node__pulse {
+  animation: service-node-pulse 1.8s ease-out infinite;
+}
+
+.service-node__focus-outline {
+  opacity: 0;
+  stroke-width: 2;
+  stroke-dasharray: 3 3;
+  transition: opacity 140ms ease;
+}
+
+.service-node:focus-visible .service-node__focus-outline,
+.service-node.is-selected .service-node__focus-outline {
+  opacity: 1;
+}
+
+.service-node__icon-well {
+  fill: color-mix(in srgb, var(--status-color) 9%, rgba(17, 24, 35, 0.94));
+  stroke: color-mix(in srgb, var(--status-color) 32%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.service-node__icon {
+  color: var(--status-color);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--status-color) 45%, transparent));
+}
+
+.service-node__status-dot {
+  fill: var(--status-color);
+  filter: drop-shadow(0 0 4px var(--status-color));
+}
+
+.service-node__status-halo {
+  fill: color-mix(in srgb, var(--status-color) 13%, transparent);
+  stroke: color-mix(in srgb, var(--status-color) 38%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.service-node.status-critical .service-node__status-halo {
+  animation: status-beacon 1s ease-in-out infinite;
+}
+
+.service-node__label {
+  fill: #edf5fc;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.service-node__code,
+.service-node__metric-label,
+.service-node__metric-value {
+  font-family: var(--mono, ui-monospace, monospace);
+}
+
+.service-node__code {
+  fill: #65798f;
+  font-size: 7px;
+  letter-spacing: 0.08em;
+}
+
+.service-node__divider {
+  stroke: rgba(132, 155, 184, 0.13);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.service-node__metric-label {
+  fill: #6f8196;
+  font-size: 7px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.service-node__metric-value {
+  fill: var(--status-color);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.service-node__load-track {
+  fill: rgba(125, 150, 180, 0.14);
+}
+
+.service-node__load-value {
+  fill: var(--status-color);
+  filter: drop-shadow(0 0 2px var(--status-color));
+  transition: width 280ms ease;
+}
+
+.service-map__footer,
+.telemetry-chart__footer {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 18px;
+  padding: 7px 15px;
+  color: var(--visual-faint);
+  border-top: 1px solid var(--visual-border);
+  background: rgba(7, 11, 18, 0.48);
+  font: 600 0.52rem/1.2 var(--mono, ui-monospace, monospace);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.service-map__footer {
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(90deg, rgba(5, 8, 10, 0.94), rgba(5, 8, 10, 0.72));
+  backdrop-filter: blur(9px);
+}
+
+.service-map__footer > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.service-map__footer kbd {
+  padding: 2px 5px;
+  color: #9cb0c5;
+  border: 1px solid rgba(137, 160, 187, 0.21);
+  border-radius: 4px;
+  background: rgba(120, 145, 173, 0.08);
+  font: inherit;
+}
+
+.service-map__route {
+  margin-left: auto;
+  color: #6d8298;
+}
+
+.status-nominal {
+  --status-color: var(--cyan, #5ad9e8);
+}
+
+.status-degraded {
+  --status-color: var(--amber, #ffc45c);
+}
+
+.status-critical {
+  --status-color: var(--signal, #ff654f);
+}
+
+.status-recovering {
+  --status-color: var(--mint, #77f2bb);
+}
+
+/* Telemetry */
+
+.telemetry-chart {
+  --metric-color: #70d8ff;
+  height: 100%;
+  min-height: 178px;
+}
+
+.telemetry-chart.metric-latency {
+  --metric-color: #ffb258;
+}
+
+.telemetry-chart.metric-errorRate {
+  --metric-color: #ff667d;
+}
+
+.telemetry-chart.metric-throughput {
+  --metric-color: #65e0c0;
+}
+
+.telemetry-chart.metric-dbConnections {
+  --metric-color: #ac91ff;
+}
+
+.telemetry-chart.metric-cacheHitRate {
+  --metric-color: #67c8ff;
+}
+
+.telemetry-chart__reading {
+  display: flex;
+  align-items: flex-end;
+  gap: 9px;
+  text-align: right;
+}
+
+.telemetry-chart__overlay {
+  position: absolute;
+  z-index: 2;
+  top: 9px;
+  right: 13px;
+  left: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.telemetry-chart__metric-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--visual-muted);
+  font: 650 0.54rem/1 var(--mono, ui-monospace, monospace);
+  letter-spacing: 0.11em;
+}
+
+.telemetry-chart__metric-label i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--metric-color);
+  box-shadow: 0 0 7px var(--metric-color);
+  animation: status-beacon 1.4s ease-in-out infinite;
+}
+
+.telemetry-chart__reading strong {
+  color: var(--metric-color);
+  font: 650 1.3rem/1 var(--mono, ui-monospace, monospace);
+  letter-spacing: -0.05em;
+  text-shadow: 0 0 18px color-mix(in srgb, var(--metric-color) 28%, transparent);
+}
+
+.telemetry-chart__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 5px;
+  color: #8ca0b5;
+  border: 1px solid rgba(131, 153, 179, 0.15);
+  border-radius: 5px;
+  background: rgba(112, 135, 160, 0.06);
+  font: 600 0.54rem/1 var(--mono, ui-monospace, monospace);
+}
+
+.telemetry-chart__trend.is-up {
+  color: #ffb167;
+}
+
+.telemetry-chart__trend.is-down {
+  color: #65d8e6;
+}
+
+.telemetry-chart__plot {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(18, 28, 41, 0.27), transparent 68%),
+    rgba(4, 8, 14, 0.26);
+}
+
+.telemetry-chart__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  font-family: var(--mono, ui-monospace, monospace);
+}
+
+.telemetry-chart__grid line {
+  stroke: rgba(122, 149, 180, 0.115);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.telemetry-chart__grid text,
+.telemetry-chart__x-axis text {
+  fill: #5e7187;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.telemetry-chart__gradient-top {
+  stop-color: var(--metric-color);
+  stop-opacity: 0.24;
+}
+
+.telemetry-chart__gradient-bottom {
+  stop-color: var(--metric-color);
+  stop-opacity: 0.005;
+}
+
+.telemetry-chart__area {
+  opacity: 0;
+  animation: chart-area-in 650ms ease-out forwards;
+}
+
+.telemetry-chart__line,
+.telemetry-chart__line-shadow {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.telemetry-chart__line-shadow {
+  stroke: color-mix(in srgb, var(--metric-color) 40%, transparent);
+  stroke-width: 7;
+  opacity: 0.33;
+  filter: blur(3px);
+}
+
+.telemetry-chart__line {
+  stroke: var(--metric-color);
+  stroke-width: 2;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--metric-color) 58%, transparent));
+  animation: chart-line-in 720ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.telemetry-chart__samples circle {
+  fill: #0d1722;
+  stroke: color-mix(in srgb, var(--metric-color) 68%, transparent);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.telemetry-chart__latest line {
+  stroke: color-mix(in srgb, var(--metric-color) 23%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.telemetry-chart__latest-halo {
+  fill: color-mix(in srgb, var(--metric-color) 11%, transparent);
+  stroke: color-mix(in srgb, var(--metric-color) 30%, transparent);
+  stroke-width: 1;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: latest-point-pulse 1.8s ease-out infinite;
+}
+
+.telemetry-chart__latest-point {
+  fill: var(--metric-color);
+  stroke: #101a25;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 5px var(--metric-color));
+}
+
+.telemetry-chart__empty {
+  display: grid;
+  height: 100%;
+  min-height: 176px;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  padding: 28px;
+  color: var(--visual-faint);
+  text-align: center;
+  background:
+    linear-gradient(rgba(118, 148, 179, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(118, 148, 179, 0.055) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.telemetry-chart__empty > span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 3px;
+  place-items: center;
+  color: #6b849c;
+  border: 1px solid rgba(125, 154, 184, 0.17);
+  border-radius: 50%;
+  background: rgba(95, 126, 158, 0.06);
+}
+
+.telemetry-chart__empty strong {
+  color: #9cadbf;
+  font: 600 0.76rem/1.2 var(--sans, system-ui, sans-serif);
+}
+
+.telemetry-chart__empty small {
+  max-width: 250px;
+  font: 500 0.61rem/1.45 var(--mono, ui-monospace, monospace);
+}
+
+.telemetry-chart__footer {
+  justify-content: flex-start;
+}
+
+.telemetry-chart__footer strong {
+  color: #8499af;
+  font-weight: 650;
+}
+
+.telemetry-chart__footer .telemetry-chart__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: #62caaa;
+}
+
+.telemetry-chart__live i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 7px currentColor;
+  animation: status-beacon 1.4s ease-in-out infinite;
+}
+
+.telemetry-chart--compact .telemetry-chart__header {
+  min-height: 0;
+  padding: 0;
+}
+
+.telemetry-chart--compact {
+  min-height: 146px;
+}
+
+.telemetry-chart--compact .visual-heading__icon {
+  width: 28px;
+  height: 28px;
+}
+
+.telemetry-chart--compact .telemetry-chart__reading strong {
+  font-size: 1rem;
+}
+
+.telemetry-chart--compact .telemetry-chart__trend {
+  display: none;
+}
+
+.telemetry-chart--compact .telemetry-chart__overlay {
+  top: 7px;
+  right: 10px;
+  left: 10px;
+}
+
+@keyframes service-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@keyframes service-node-pulse {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes status-beacon {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes chart-line-in {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes chart-area-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes latest-point-pulse {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.75);
+  }
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@media (max-width: 760px) {
+  .service-map__header,
+  .telemetry-chart__header {
+    min-height: 58px;
+    padding: 11px 13px;
+  }
+
+  .service-map__legend {
+    gap: 8px;
+  }
+
+  .service-map__legend li {
+    font-size: 0;
+  }
+
+  .service-map__legend li > span {
+    width: 7px;
+    height: 7px;
+  }
+
+  .service-map__footer {
+    display: none;
+  }
+
+  .telemetry-chart__reading strong {
+    font-size: 1.05rem;
+  }
+
+  .telemetry-chart__trend {
+    display: none;
+  }
+}
+
+@media (max-width: 460px) {
+  .service-map,
+  .telemetry-chart {
+    border-radius: 14px;
+  }
+
+  .visual-heading__icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .service-map__legend {
+    gap: 6px;
+  }
+
+  .telemetry-chart__footer {
+    gap: 10px;
+    padding-inline: 11px;
+  }
+
+  .telemetry-chart__footer > span:nth-child(2) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .service-map *,
+  .telemetry-chart * {
+    scroll-behavior: auto !important;
+  }
+
+  .service-link__flow,
+  .service-node__pulse,
+  .service-node__status-halo,
+  .service-node__load-value,
+  .telemetry-chart__area,
+  .telemetry-chart__line,
+  .telemetry-chart__latest-halo,
+  .telemetry-chart__metric-label i,
+  .telemetry-chart__live i {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .telemetry-chart__area {
+    opacity: 1;
+  }
+
+  .telemetry-chart__line {
+    stroke-dashoffset: 0;
+  }
+
+  .telemetry-chart__latest-halo {
+    opacity: 0.3;
+  }
+}
