@@ -1,0 +1,328 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import {
+  Activity,
+  ArrowLeft,
+  Check,
+  ChevronRight,
+  CircleAlert,
+  Clock3,
+  ExternalLink,
+  Eye,
+  FileCode2,
+  Flag,
+  GitCommitHorizontal,
+  Pause,
+  Play,
+  RotateCcw,
+  ShieldCheck,
+  Sparkles,
+  TimerReset,
+  UserRoundCheck,
+  X,
+} from "lucide-react";
+import { CausalGraph, type GraphEdge, type GraphNode } from "@/components/graph/causal-graph";
+import { Sparkline } from "@/components/ui/sparkline";
+import { StatusPill } from "@/components/ui/status-pill";
+import { cn } from "@/lib/utils";
+
+const graphNodes: GraphNode[] = [
+  { id: "pr", label: "PR #1842", detail: "retry tax quote", kind: "pull-request", status: "neutral", x: 8, y: 28, step: 0 },
+  { id: "deploy", label: "deploy 2.18.0", detail: "09:12 · prod", kind: "deployment", status: "healthy", x: 27, y: 28, step: 1 },
+  { id: "flag", label: "instant-tax-v2", detail: "50% → 100%", kind: "flag", status: "warning", x: 45, y: 18, step: 2 },
+  { id: "service", label: "checkout-api", detail: "p95 +171%", kind: "service", status: "critical", x: 58, y: 43, step: 3 },
+  { id: "trace", label: "tax span", detail: "pool saturation", kind: "runtime", status: "critical", x: 74, y: 18, step: 4 },
+  { id: "slo", label: "latency SLO", detail: "burn 8.4×", kind: "metric", status: "warning", x: 75, y: 66, step: 5 },
+  { id: "impact", label: "conversion", detail: "−7.3%", kind: "customer", status: "critical", x: 91, y: 66, step: 6 },
+  { id: "agent", label: "rollback plan", detail: "human approval", kind: "agent", status: "inferred", x: 91, y: 22, step: 7 },
+];
+
+const graphEdges: GraphEdge[] = [
+  { id: "e1", source: "pr", target: "deploy", state: "observed", step: 1 },
+  { id: "e2", source: "deploy", target: "flag", state: "observed", step: 2 },
+  { id: "e3", source: "flag", target: "service", state: "observed", step: 3 },
+  { id: "e4", source: "service", target: "trace", state: "observed", step: 4 },
+  { id: "e5", source: "service", target: "slo", state: "observed", step: 5 },
+  { id: "e6", source: "slo", target: "impact", state: "inferred", step: 6 },
+  { id: "e7", source: "trace", target: "agent", state: "inferred", step: 7 },
+  { id: "e8", source: "agent", target: "impact", state: "approved", step: 9 },
+];
+
+const timeline = [
+  { time: "09:08", title: "PR #1842 merged", detail: "Retry policy for asynchronous tax quote lookup", type: "change", icon: FileCode2 },
+  { time: "09:12", title: "checkout-api@2.18.0 deployed", detail: "Production rollout completed across 6 instances", type: "deploy", icon: GitCommitHorizontal },
+  { time: "09:18", title: "instant-tax-v2 set to 100%", detail: "Feature flag rollout increased from 50%", type: "flag", icon: Flag },
+  { time: "09:21", title: "p95 latency exceeded baseline", detail: "680 ms → 1.84 s in three minutes", type: "alert", icon: Activity },
+  { time: "09:22", title: "Error budget began rapid burn", detail: "Checkout latency SLO burn rate reached 8.4×", type: "alert", icon: CircleAlert },
+  { time: "09:23", title: "Customer conversion declined", detail: "Relative −7.3%, estimated −$12.4k per hour", type: "impact", icon: Eye },
+  { time: "09:24", title: "Incident INC-2471 declared", detail: "SEV-2 · Commerce Core paged", type: "incident", icon: ShieldCheck },
+  { time: "09:25", title: "Leading hypothesis generated", detail: "7 corroborating signals, 1 conflicting signal", type: "agent", icon: Sparkles },
+  { time: "09:31", title: "Flag rollback approved", detail: "Production Operator · J. Lee", type: "action", icon: UserRoundCheck },
+  { time: "09:40", title: "Recovery verified", detail: "p95 within baseline for 5 continuous minutes", type: "success", icon: Check },
+];
+
+const nodeEvidence: Record<string, { title: string; claim: string; source: string; freshness: string; state: "Observed" | "Inferred" | "Proposed" }> = {
+  pr: { title: "Retry policy changed", claim: "PR #1842 raises outbound tax quote retries from 1 to 3.", source: "GitHub · diff", freshness: "17m ago", state: "Observed" },
+  deploy: { title: "Version reached production", claim: "All checkout-api instances reported 2.18.0 by 09:12.", source: "Deploy event", freshness: "13m ago", state: "Observed" },
+  flag: { title: "Exposure doubled", claim: "instant-tax-v2 moved from 50% to 100% six minutes after deploy.", source: "Flag audit", freshness: "7m ago", state: "Observed" },
+  service: { title: "Latency regressed", claim: "p95 increased 171% while traffic remained within 2% of baseline.", source: "OpenTelemetry", freshness: "live", state: "Observed" },
+  trace: { title: "Pool saturation", claim: "92% of slow traces wait on tax-adapter connection acquisition.", source: "Trace sample", freshness: "28s ago", state: "Observed" },
+  slo: { title: "Budget at risk", claim: "Current burn rate would consume the remaining monthly budget in 3.6 hours.", source: "SLO monitor", freshness: "live", state: "Observed" },
+  impact: { title: "Likely business impact", claim: "Checkout conversion decline aligns with the elevated latency window.", source: "Commerce analytics", freshness: "2m delayed", state: "Inferred" },
+  agent: { title: "Safe mitigation proposed", claim: "Set instant-tax-v2 to 0% and watch latency for five minutes.", source: "Threadline agent", freshness: "now", state: "Proposed" },
+};
+
+const metrics = {
+  latency: [0.66, 0.69, 0.68, 0.72, 1.1, 1.84, 1.76, 1.48, 0.9, 0.7],
+  errors: [0.6, 0.7, 0.7, 0.8, 2.2, 4.9, 4.5, 3.1, 1.2, 0.8],
+  conversion: [68.4, 68.7, 68.2, 68.5, 67.2, 63.5, 63.8, 65.1, 67.4, 68.1],
+};
+
+type ActionState = "idle" | "executing" | "verifying" | "completed";
+type ViewMode = "graph" | "timeline" | "evidence";
+
+export function IncidentRoom() {
+  const [currentStep, setCurrentStep] = useState(7);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const [view, setView] = useState<ViewMode>("graph");
+  const [selected, setSelected] = useState<GraphNode>(graphNodes[4]);
+  const [actionState, setActionState] = useState<ActionState>("idle");
+  const approvalDialog = useRef<HTMLDialogElement>(null);
+
+  const goToStep = useCallback((nextStep: number) => {
+    const boundedStep = Math.max(0, Math.min(timeline.length - 1, nextStep));
+    setCurrentStep(boundedStep);
+    setSelected((current) => {
+      if ((current.step ?? 0) <= boundedStep) return current;
+      return [...graphNodes].reverse().find((node) => (node.step ?? 0) <= boundedStep) ?? graphNodes[0];
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setTimeout(() => {
+      if (currentStep >= timeline.length - 1) {
+        setPlaying(false);
+        return;
+      }
+      goToStep(currentStep + 1);
+    }, 1200 / speed);
+    return () => window.clearTimeout(timer);
+  }, [currentStep, goToStep, playing, speed]);
+
+  useEffect(() => {
+    if (actionState === "executing") {
+      const timer = window.setTimeout(() => setActionState("verifying"), 1200);
+      return () => window.clearTimeout(timer);
+    }
+    if (actionState === "verifying") {
+      const timer = window.setTimeout(() => {
+        setActionState("completed");
+        goToStep(9);
+      }, 2200);
+      return () => window.clearTimeout(timer);
+    }
+  }, [actionState, goToStep]);
+
+  const stepTime = timeline[currentStep]?.time ?? timeline.at(-1)?.time;
+  const evidence = nodeEvidence[selected.id];
+  const metricIndex = Math.min(currentStep, metrics.latency.length - 1);
+  const visibleTimeline = timeline.slice(0, currentStep + 1).reverse();
+  const actionLabel = actionState === "idle" ? "Review mitigation" : actionState === "executing" ? "Disabling flag…" : actionState === "verifying" ? "Watching recovery…" : "Recovery verified";
+  const actionProgress = actionState === "executing" ? 40 : actionState === "verifying" ? 76 : actionState === "completed" ? 100 : 0;
+
+  const stateTone = evidence?.state === "Observed" ? "signal" : evidence?.state === "Inferred" ? "inference" : "primary";
+
+  const approve = () => {
+    approvalDialog.current?.close();
+    setActionState("executing");
+  };
+
+  return (
+    <div className="mx-auto max-w-[1540px] px-4 py-5 sm:px-6 sm:py-7">
+      <div className="mb-5 flex flex-wrap items-center gap-2 text-[10px] text-muted">
+        <Link href="/command" className="inline-flex items-center gap-1 hover:text-foreground"><ArrowLeft aria-hidden="true" className="size-3" />Command</Link>
+        <ChevronRight aria-hidden="true" className="size-3" />
+        <span>Incidents</span><ChevronRight aria-hidden="true" className="size-3" />
+        <span className="text-foreground">INC-2471</span>
+      </div>
+
+      <header className="flex flex-col gap-5 border-b border-border pb-6 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusPill tone="danger" dot>SEV-2</StatusPill>
+            <StatusPill tone={actionState === "completed" ? "success" : "warning"} dot>{actionState === "completed" ? "Resolved" : "Investigating"}</StatusPill>
+            <span className="font-mono text-[9px] text-muted">INC-2471</span>
+          </div>
+          <h1 className="mt-3 text-2xl font-medium tracking-[-0.035em] sm:text-[1.8rem]">Checkout latency elevated</h1>
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-muted">Elevated latency and errors are reducing completed checkouts in production. Commerce Core is responding.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex h-10 items-center gap-2 rounded-md border border-border bg-panel-soft px-3 font-mono text-[9px] text-muted"><Clock3 aria-hidden="true" className="size-3.5" /><span className="text-foreground">24m</span> elapsed</div>
+          <div className="flex h-10 items-center gap-2 rounded-md border border-border bg-panel-soft px-3 text-[10px]"><span className="grid size-5 place-items-center rounded-full bg-primary/10 font-mono text-[8px] text-primary">AM</span>A. Morgan · Commander</div>
+        </div>
+      </header>
+
+      <section aria-label="Customer impact summary" className="mt-5 grid gap-3 sm:grid-cols-3">
+        <ImpactMetric label="Checkout conversion" value={`${metrics.conversion[metricIndex].toFixed(1)}%`} change={currentStep >= 5 ? "−7.3% relative" : "within baseline"} points={metrics.conversion.slice(0, metricIndex + 1)} tone="danger" />
+        <ImpactMetric label="p95 latency" value={`${metrics.latency[metricIndex].toFixed(2)} s`} change={currentStep >= 4 ? "+171% from baseline" : "baseline 680 ms"} points={metrics.latency.slice(0, metricIndex + 1)} tone="warning" />
+        <ImpactMetric label="Estimated revenue impact" value={currentStep >= 5 ? "−$12.4k/hr" : "$0/hr"} change="Modeled · 2m delay" points={[0, 0, 0, 1, 4, 12.4, 11.8, 8.2, 2.4, 0]} tone="danger" />
+      </section>
+
+      <section aria-label="Incident replay controls" className="panel mt-4 p-3 sm:p-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center">
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => setPlaying((value) => !value)} className="grid size-9 place-items-center rounded-md bg-primary text-primary-foreground" aria-label={playing ? "Pause replay" : "Play replay"}>{playing ? <Pause aria-hidden="true" className="size-4" /> : <Play aria-hidden="true" className="ms-0.5 size-4" />}</button>
+            <button type="button" onClick={() => { goToStep(0); setPlaying(false); setActionState("idle"); }} className="grid size-9 place-items-center rounded-md border border-border text-muted hover:text-foreground" aria-label="Reset replay"><RotateCcw aria-hidden="true" className="size-3.5" /></button>
+            <button type="button" onClick={() => setSpeed((value) => value === 1 ? 2 : 1)} className="h-9 min-w-10 rounded-md border border-border px-2 font-mono text-[9px] text-muted hover:text-foreground" aria-label={`Replay speed ${speed} times`}>{speed}×</button>
+          </div>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <span className="w-10 font-mono text-[9px] text-primary">{stepTime}</span>
+            <input type="range" min="0" max={timeline.length - 1} value={currentStep} onChange={(event) => { setPlaying(false); goToStep(Number(event.target.value)); }} className="h-1 min-w-0 flex-1 accent-[var(--primary)]" aria-label="Incident replay time" />
+            <span className="font-mono text-[8px] text-muted">09:40</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => { setPlaying(false); goToStep(4); }} className="inline-flex h-9 items-center gap-2 rounded-md border border-border px-3 text-[10px] text-muted hover:text-foreground"><TimerReset aria-hidden="true" className="size-3.5" />Jump to detection</button>
+            <span className="hidden font-mono text-[8px] text-muted sm:inline">Asia/Seoul (KST)</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-4">
+          <section className="panel overflow-hidden">
+            <div className="flex flex-col gap-4 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-medium">Synchronized signals</p>
+                <p className="mt-0.5 font-mono text-[8px] text-muted">Deployment, runtime, SLO, and business data</p>
+              </div>
+              <div className="flex items-center gap-4 font-mono text-[8px] text-muted"><Legend color="bg-warning" label="p95 latency" /><Legend color="bg-danger" label="error rate" /><Legend color="bg-signal" label="conversion" /></div>
+            </div>
+            <div className="grid gap-0 divide-y divide-border p-4 sm:p-5">
+              <MetricTrack label="p95 latency" value={`${metrics.latency[metricIndex].toFixed(2)} s`} points={metrics.latency} visibleIndex={metricIndex} tone="warning" baseline="680 ms baseline" />
+              <MetricTrack label="error rate" value={`${metrics.errors[metricIndex].toFixed(1)}%`} points={metrics.errors} visibleIndex={metricIndex} tone="danger" baseline="0.7% baseline" />
+              <MetricTrack label="conversion" value={`${metrics.conversion[metricIndex].toFixed(1)}%`} points={metrics.conversion} visibleIndex={metricIndex} tone="signal" baseline="68.4% baseline" />
+            </div>
+          </section>
+
+          <section className="panel overflow-hidden">
+            <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 sm:px-5">
+              <div>
+                <p className="text-xs font-medium">Causal thread</p>
+                <p className="mt-0.5 font-mono text-[8px] text-muted">Select an object to inspect its evidence</p>
+              </div>
+              <div className="ms-auto flex rounded-md border border-border bg-background p-0.5" role="group" aria-label="Incident view">
+                {(["graph", "timeline", "evidence"] as const).map((mode) => (
+                  <button key={mode} type="button" aria-pressed={view === mode} onClick={() => setView(mode)} className={cn("min-h-8 rounded px-2.5 font-mono text-[8px] capitalize text-muted", view === mode && "bg-panel-elevated text-foreground")}>{mode}</button>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 sm:p-5">
+              {view === "graph" && <CausalGraph nodes={graphNodes} edges={graphEdges} currentStep={currentStep} selectedId={selected.id} onSelect={setSelected} />}
+              {view === "timeline" && <Timeline events={visibleTimeline} />}
+              {view === "evidence" && <EvidenceTable currentStep={currentStep} onSelect={(node) => { setSelected(node); setView("graph"); }} />}
+            </div>
+            {view === "graph" && evidence && (
+              <div className="grid gap-4 border-t border-border bg-panel-soft px-4 py-4 sm:grid-cols-[1fr_auto] sm:px-5">
+                <div>
+                  <div className="flex items-center gap-2"><StatusPill tone={stateTone}>{evidence.state}</StatusPill><span className="font-mono text-[8px] text-muted">{evidence.freshness}</span></div>
+                  <h3 className="mt-2 text-sm font-medium">{evidence.title}</h3>
+                  <p className="mt-1 text-xs leading-5 text-muted">{evidence.claim}</p>
+                </div>
+                <a href="https://github.com/junlee122-bot/something" target="_blank" rel="noreferrer" className="inline-flex h-9 items-center justify-center gap-2 self-end rounded-md border border-border px-3 text-[10px] text-muted hover:text-foreground">Open source <ExternalLink aria-hidden="true" className="size-3" /></a>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <aside className="space-y-4">
+          <section className="panel p-5">
+            <div className="flex items-center justify-between"><p className="eyebrow">Leading hypothesis</p><StatusPill tone="success">High confidence</StatusPill></div>
+            <h2 className="mt-4 text-base font-medium leading-6">The flag rollout is the leading explanation.</h2>
+            <p className="mt-3 text-xs leading-5 text-muted">Code, deployment, trace, and business signals agree. Third-party latency remains a plausible contributing factor.</p>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <div className="rounded-md border border-border bg-panel-soft p-3"><p className="font-mono text-lg text-foreground">7</p><p className="mt-1 text-[9px] text-muted">supporting signals</p></div>
+              <div className="rounded-md border border-border bg-panel-soft p-3"><p className="font-mono text-lg text-foreground">1</p><p className="mt-1 text-[9px] text-muted">conflicting signal</p></div>
+            </div>
+            <button type="button" onClick={() => setView("evidence")} className="mt-4 inline-flex h-9 w-full items-center justify-center gap-2 rounded-md border border-border text-[10px] text-muted hover:bg-white/[0.03] hover:text-foreground"><Eye aria-hidden="true" className="size-3.5" />Why this hypothesis?</button>
+          </section>
+
+          <section className={cn("panel overflow-hidden", actionState === "completed" && "border-success/30")}>
+            <div className="border-b border-border p-5">
+              <div className="flex items-center justify-between"><p className="eyebrow">Proposed action</p><StatusPill tone={actionState === "completed" ? "success" : "inference"}>{actionState === "completed" ? "Completed" : "Demo only"}</StatusPill></div>
+              <h2 className="mt-4 text-base font-medium">Disable instant-tax-v2</h2>
+              <p className="mt-2 text-xs leading-5 text-muted">Change production rollout from 100% to 0%, then watch checkout-api for recovery.</p>
+              <dl className="mt-4 space-y-2 border-t border-border pt-4 font-mono text-[9px]">
+                <ActionDetail label="Target" value="checkout-api · production" />
+                <ActionDetail label="Blast radius" value="checkout traffic only" />
+                <ActionDetail label="Rollback" value="restore previous 50%" />
+                <ActionDetail label="Approval" value="Production Operator" />
+              </dl>
+            </div>
+            <div className="p-4">
+              {actionState !== "idle" && (
+                <div className="mb-3">
+                  <div className="mb-2 flex items-center justify-between font-mono text-[8px]"><span className={actionState === "completed" ? "text-success" : "text-inference"}>{actionLabel}</span><span className="text-muted">{actionProgress}%</span></div>
+                  <div className="h-1 overflow-hidden rounded-full bg-white/[0.06]"><div className={cn("h-full rounded-full transition-all duration-700", actionState === "completed" ? "bg-success" : "bg-inference")} style={{ width: `${actionProgress}%` }} /></div>
+                </div>
+              )}
+              <button type="button" disabled={actionState !== "idle"} onClick={() => approvalDialog.current?.showModal()} className={cn("inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-inference text-[11px] font-semibold text-[#0b0915] transition-opacity", actionState !== "idle" && "bg-success/15 text-success")}>
+                {actionState === "completed" ? <Check aria-hidden="true" className="size-4" /> : <ShieldCheck aria-hidden="true" className="size-4" />}{actionLabel}
+              </button>
+              <p aria-live="polite" className="sr-only">{actionState === "idle" ? "Mitigation ready for review" : actionLabel}</p>
+            </div>
+          </section>
+
+          <section className="panel p-5">
+            <div className="flex items-center justify-between"><p className="eyebrow">Recent events</p><button type="button" onClick={() => setView("timeline")} className="font-mono text-[8px] text-primary hover:underline">View all</button></div>
+            <div className="mt-4"><Timeline events={visibleTimeline.slice(0, 4)} compact /></div>
+          </section>
+        </aside>
+      </div>
+
+      <dialog ref={approvalDialog} className="m-auto w-[min(560px,calc(100%-2rem))] overflow-hidden rounded-xl border border-border-strong bg-panel p-0 text-foreground shadow-[0_32px_120px_rgba(0,0,0,.7)] backdrop:bg-black/75 backdrop:backdrop-blur-sm" aria-labelledby="approval-title">
+        <div className="flex items-start gap-4 border-b border-border p-5 sm:p-6">
+          <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-inference/20 bg-inference/[0.07] text-inference"><ShieldCheck aria-hidden="true" className="size-5" /></span>
+          <div className="min-w-0"><StatusPill tone="inference">Demo action</StatusPill><h2 id="approval-title" className="mt-3 text-lg font-medium">Disable instant-tax-v2 in production?</h2><p className="mt-2 text-xs leading-5 text-muted">No production system will be changed. This interaction demonstrates Threadline&apos;s human approval boundary.</p></div>
+          <button type="button" onClick={() => approvalDialog.current?.close()} className="ms-auto grid size-8 shrink-0 place-items-center rounded-md text-muted hover:bg-white/[0.04] hover:text-foreground" aria-label="Close approval dialog"><X aria-hidden="true" className="size-4" /></button>
+        </div>
+        <div className="space-y-3 p-5 sm:p-6">
+          <PreviewRow label="Environment" before="production" after="production" />
+          <PreviewRow label="Flag rollout" before="100%" after="0%" changed />
+          <PreviewRow label="Affected service" before="checkout-api" after="checkout-api" />
+          <div className="rounded-lg border border-border bg-background p-4"><p className="eyebrow">Success criteria</p><p className="mt-2 text-xs leading-5 text-muted">p95 latency stays below 800 ms and error rate below 1.0% for five continuous minutes.</p></div>
+        </div>
+        <div className="flex flex-col-reverse gap-2 border-t border-border bg-panel-soft p-4 sm:flex-row sm:justify-end">
+          <button type="button" onClick={() => approvalDialog.current?.close()} className="h-10 rounded-md border border-border px-4 text-[11px] text-muted hover:text-foreground">Cancel</button>
+          <button type="button" onClick={approve} className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-inference px-4 text-[11px] font-semibold text-[#0b0915]"><UserRoundCheck aria-hidden="true" className="size-4" />Approve demo rollback</button>
+        </div>
+      </dialog>
+    </div>
+  );
+}
+
+function ImpactMetric({ label, value, change, points, tone }: { label: string; value: string; change: string; points: number[]; tone: "danger" | "warning" }) {
+  const changeClass = change.includes("baseline") ? "text-success" : tone === "danger" ? "text-danger" : "text-warning";
+  return <article className="panel grid min-h-[112px] grid-cols-[1fr_110px] gap-3 p-4"><div><p className="text-[10px] text-muted">{label}</p><p className="mt-3 font-mono text-xl font-medium tabular">{value}</p><p className={`mt-1 font-mono text-[8px] ${changeClass}`}>{change}</p></div><Sparkline points={points} label={`${label} trend`} tone={tone} className="self-end" /></article>;
+}
+
+function Legend({ color, label }: { color: string; label: string }) { return <span className="flex items-center gap-1.5"><span className={`size-1.5 rounded-full ${color}`} />{label}</span>; }
+
+function MetricTrack({ label, value, points, visibleIndex, tone, baseline }: { label: string; value: string; points: number[]; visibleIndex: number; tone: "warning" | "danger" | "signal"; baseline: string }) {
+  return <div className="grid min-h-[90px] grid-cols-[90px_minmax(0,1fr)] items-center gap-3 py-3 first:pt-0 last:pb-0 sm:grid-cols-[130px_minmax(0,1fr)_90px]"><div><p className="text-[10px] text-muted">{label}</p><p className="mt-1 font-mono text-sm tabular">{value}</p></div><div className="relative"><Sparkline points={points.slice(0, visibleIndex + 1)} label={`${label} through ${timeline[visibleIndex].time}`} tone={tone} className="h-14" /><div aria-hidden="true" className="absolute inset-y-0 end-0 w-px bg-foreground/20" /></div><p className="hidden text-end font-mono text-[8px] text-muted sm:block">{baseline}</p></div>;
+}
+
+function Timeline({ events, compact = false }: { events: typeof timeline; compact?: boolean }) {
+  return <ol className={cn("relative border-s border-border ps-5", compact && "ps-4")}>{events.map((event) => { const Icon = event.icon; return <li key={`${event.time}-${event.title}`} className={cn("relative pb-5 last:pb-0", compact && "pb-4")}><span className={cn("absolute -start-[1.72rem] top-0 grid size-5 place-items-center rounded-full border border-border bg-panel-elevated text-muted", compact && "-start-[1.4rem] size-4")}><Icon aria-hidden="true" className="size-2.5" /></span><div className="flex items-center gap-2"><time className="font-mono text-[8px] text-primary">{event.time}</time><span className="font-mono text-[7px] uppercase text-muted">{event.type}</span></div><p className={cn("mt-1 text-[11px] font-medium", compact && "text-[10px]")}>{event.title}</p>{!compact && <p className="mt-1 text-[10px] leading-5 text-muted">{event.detail}</p>}</li>; })}</ol>;
+}
+
+function EvidenceTable({ currentStep, onSelect }: { currentStep: number; onSelect: (node: GraphNode) => void }) {
+  return <div className="overflow-x-auto"><table className="w-full min-w-[680px] border-collapse text-start"><thead><tr className="border-b border-border text-start font-mono text-[8px] uppercase tracking-wider text-muted"><th className="px-3 py-2 font-medium">State</th><th className="px-3 py-2 font-medium">Claim</th><th className="px-3 py-2 font-medium">Source</th><th className="px-3 py-2 font-medium">Freshness</th><th className="px-3 py-2"><span className="sr-only">Action</span></th></tr></thead><tbody>{graphNodes.filter((node) => (node.step ?? 0) <= currentStep).map((node) => { const item = nodeEvidence[node.id]; return <tr key={node.id} className="border-b border-border/70 last:border-0"><td className="px-3 py-3"><StatusPill tone={item.state === "Observed" ? "signal" : item.state === "Inferred" ? "inference" : "primary"}>{item.state}</StatusPill></td><td className="px-3 py-3 text-[10px] text-foreground">{item.claim}</td><td className="px-3 py-3 font-mono text-[9px] text-muted">{item.source}</td><td className="px-3 py-3 font-mono text-[9px] text-muted">{item.freshness}</td><td className="px-3 py-3 text-end"><button type="button" onClick={() => onSelect(node)} className="text-[9px] text-primary hover:underline">Inspect</button></td></tr>; })}</tbody></table></div>;
+}
+
+function ActionDetail({ label, value }: { label: string; value: string }) { return <div className="flex items-center justify-between gap-3"><dt className="text-muted">{label}</dt><dd className="text-end text-foreground">{value}</dd></div>; }
+
+function PreviewRow({ label, before, after, changed = false }: { label: string; before: string; after: string; changed?: boolean }) { return <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-lg border border-border bg-background p-3 font-mono text-[9px]"><span className="text-muted">{label}</span><span className={changed ? "text-danger line-through" : "text-foreground"}>{before}</span><span className={changed ? "text-success" : "text-muted"}>→ {after}</span></div>; }
