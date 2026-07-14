@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a reproducible problem in the Threadline demo.
+title: "[Bug]: "
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping make the demo more reliable. Do not include secrets or private production data.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction
+      description: Include the route, steps, and any filters or controls used.
+      placeholder: |
+        1. Open /command
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Chrome or Chromium
+        - Safari
+        - Firefox
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting evidence
+      description: Add screenshots, console output, or a minimal reproduction. Redact tokens and personal data.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Preflight
+      options:
+        - label: I searched for an existing issue.
+          required: true
+        - label: I removed secrets and private production data.
+          required: true

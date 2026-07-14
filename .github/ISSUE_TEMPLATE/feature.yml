@@ -1,0 +1,29 @@
+name: Product idea
+description: Propose a focused improvement to the Threadline product story.
+title: "[Idea]: "
+labels: [enhancement, triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: What user decision is difficult today, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe success without prescribing an implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and references
+      description: Link research, examples, or workflows that support the request.
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Trust, safety, or accessibility constraints
+      description: Call out approval, provenance, privacy, motion, contrast, or keyboard concerns.

@@ -1,110 +1,149 @@
-<p align="center">
-  <strong>FAULTLINE / INCIDENT COMMANDER</strong><br />
-  <em>A cinematic, playable SRE incident simulation.</em>
-</p>
+# THREADLINE
 
-<p align="center">
-  <a href="https://github.com/junlee122-bot/something/actions/workflows/ci.yml"><img alt="Verify" src="https://github.com/junlee122-bot/something/actions/workflows/ci.yml/badge.svg" /></a>
-  <img alt="React 19" src="https://img.shields.io/badge/React-19-77f2bb?style=flat-square&logo=react&logoColor=050707" />
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-ffc45c?style=flat-square&logo=typescript&logoColor=050707" />
-  <img alt="No external APIs" src="https://img.shields.io/badge/external_APIs-none-ff654f?style=flat-square" />
-</p>
+> **Every signal, traced to source.**
 
-<p align="center">
-  <a href="https://junlee122-bot.github.io/something/"><strong>Launch the live incident →</strong></a>
-</p>
+Threadline is an evidence-native software intelligence command center. It connects intent, code, deployments, runtime telemetry, and customer impact into one time-aware causal thread—then puts human approval and recovery verification around AI-proposed actions.
 
-![FAULTLINE command deck](docs/screenshots/cockpit-check.png)
+[![CI](https://github.com/junlee122-bot/something/actions/workflows/ci.yml/badge.svg)](https://github.com/junlee122-bot/something/actions/workflows/ci.yml)
+[![Next.js](https://img.shields.io/badge/Next.js-16.2-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![WCAG](https://img.shields.io/badge/accessibility-WCAG%202.2%20AA-B8F66A)](https://www.w3.org/WAI/standards-guidelines/wcag/)
 
-At 02:13 UTC, checkout latency crosses the red line. A global payment path is collapsing from the cache layer into the primary database. You have eight simulated minutes and six irreversible calls to contain it.
+This repository is a portfolio-scale concept product. It runs on deterministic demo data, requires no account or API key, and never changes a real production system.
 
-FAULTLINE is not a dashboard mockup. It is a complete 2–3 minute interactive incident: briefing, deterministic telemetry, branching interventions, three outcomes, and an exportable after-action report.
+## Why this project exists
 
-## The experience
+During an incident, teams already have the facts—but those facts live in a pull request, deployment dashboard, flag audit, trace waterfall, SLO monitor, analytics tool, and chat room. Threadline turns that fragmented evidence into an inspectable operating picture.
 
-- **Read the system.** Six services, animated traffic paths, five telemetry modes, live logs, and an evidence board all react to the same causal model.
-- **Make the call.** Every decision offers an optimal, mixed, and dangerous intervention. The incident clock pauses, but the consequences do not rewind.
-- **Find the real cause.** A recent deploy is deliberate misdirection. The causal chain is synchronized cache expiry → origin stampede → database connection exhaustion.
-- **Own the result.** Finish with Sovereign Recovery, Contained Impact, or Systemic Cascade, then compare your timeline with the optimal playbook.
+The product deliberately avoids the “chatbot on top of a dashboard” pattern:
 
-![Command decision](docs/screenshots/decision-check.png)
+- AI claims are labeled as **observed**, **inferred**, or **proposed**.
+- Every conclusion links back to evidence, freshness, and conflicting signals.
+- The system can be replayed, so the interface shows what was knowable at each moment.
+- Agent actions expose the target, blast radius, rollback plan, approver, and success criteria.
+- Recovery is not declared until a verification window passes.
 
-## Why it is portfolio-grade
+## The demo story
 
-FAULTLINE combines product storytelling with systems engineering in one self-contained demo:
+The Meridian Market demo follows one incident across every screen:
 
-| Discipline | What is demonstrated |
-| --- | --- |
-| Product design | A complete beginning, pressure loop, climax, and debrief instead of an endless dashboard |
-| Frontend engineering | React state orchestration, deterministic time simulation, responsive SVG, keyboard controls |
-| Data visualization | Animated service topology, rolling multi-metric telemetry, evidence correlation |
-| Systems thinking | Cache stampede, backpressure, pool saturation, graceful degradation, SLO-gated recovery |
-| Accessibility | Semantic regions, focus trapping, numeric shortcuts, reduced-motion support, SVG descriptions |
-| Delivery | Strict TypeScript, unit and interaction tests, linting, production build, GitHub Actions |
-
-## Simulation architecture
-
-```mermaid
-flowchart LR
-  A["Scenario clock"] --> B["Deterministic causal model"]
-  C["Command decisions"] --> D["Cumulative intervention modifiers"]
-  D --> B
-  B --> E["Service health + traffic"]
-  B --> F["Telemetry + revenue impact"]
-  E --> G["SVG topology"]
-  F --> H["Rolling charts + evidence"]
-  C --> I["Decision timeline"]
-  B --> J["Ending + incident score"]
-  I --> J
+```text
+PR #1842
+   → checkout-api@2.18.0 deploy
+   → instant-tax-v2 rollout to 100%
+   → tax-adapter pool saturation
+   → p95 latency +171% / error rate 4.9%
+   → checkout conversion −7.3%
+   → human-approved flag rollback
+   → five-minute recovery verification
 ```
 
-There is no random data and no external API. Equal time and intervention inputs always produce the same frame, which makes the incident replayable and testable.
+Open `/incidents/inc-2471` and use the replay controls to watch the graph, metrics, timeline, evidence, and proposed action advance together.
 
-The outcome score combines final system health, canonical decision accuracy, and decision quality. Client-provided verdicts are never trusted when the report is built.
+The command and incident surfaces begin at the investigating snapshot so the interaction can be replayed; Agents and Reports preserve the verified 09:40 outcome of that same thread.
 
-## Run locally
+## Product surfaces
+
+| Route | Experience |
+| --- | --- |
+| `/` | Cinematic product narrative and live causal-thread preview |
+| `/command` | Evidence-backed briefing, pulse metrics, causal graph, attention queue |
+| `/incidents` | Active and historical incident operating view |
+| `/incidents/inc-2471` | Time replay, synchronized telemetry, evidence inspector, safe mitigation |
+| `/map` | Interactive service topology with health/change/ownership modes |
+| `/changes` | Searchable, explainable change-risk intelligence |
+| `/agents` | Agent mission control with inspectable steps and approvals |
+| `/reports` | DORA, SLO, customer impact, and weekly reliability narrative |
+| `/offline` | PWA fallback with useful navigation |
+| `/api/health` | Minimal deployment health endpoint |
+
+Global `⌘/Ctrl K` opens a command palette from every product route.
+
+## Engineering highlights
+
+- Next.js 16 App Router and React 19
+- Server Components by default; focused Client Component islands for replay, graph selection, filters, and dialogs
+- TypeScript strict mode with a typed domain model and deterministic fixtures
+- Tailwind CSS v4 with a custom token system and Geist typography
+- Accessible SVG/data visualization with timeline and table alternatives
+- Native dialog semantics for command and approval flows
+- Installable PWA metadata and conservative offline service worker
+- Security headers for browser capability isolation and service-worker delivery
+- Vitest data and utility invariants
+- GitHub Actions checks for lint, typecheck, tests, and production build
+
+## Local development
+
+Requirements:
+
+- Node.js 24 or newer
+- npm 11 or newer
 
 ```bash
+git clone https://github.com/junlee122-bot/something.git
+cd something
 npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. Node.js 22 is recommended (`.nvmrc` is included).
+Open [http://localhost:3000](http://localhost:3000).
 
-### Controls
+No `.env` file is required. Set `NEXT_PUBLIC_SITE_URL` only when deploying so canonical metadata, robots, and sitemap URLs use the production origin.
 
-| Input | Action |
-| --- | --- |
-| `Space` | Pause or resume the simulation |
-| `1` / `2` / `3` | Execute the matching command during a decision |
-| `1×` / `4×` / `8×` | Change simulation speed |
-| `Tab`, `Enter`, `Space` | Navigate and inspect service nodes |
-
-## Quality gates
+## Quality commands
 
 ```bash
-npm test       # deterministic model + React interaction coverage
-npm run lint   # oxlint static analysis
-npm run build  # strict TypeScript + production Vite bundle
+npm run lint        # Next/React lint rules
+npm run typecheck   # TypeScript, no emit
+npm run test        # deterministic unit/invariant tests
+npm run build       # production build and route generation
+npm run check       # all of the above
 ```
 
-The repository's `Verify` workflow runs all three on every push and pull request.
+## Architecture
 
-## Project map
-
-```text
-src/
-├── components/            cinematic screens, command UI, SVG visualizations
-├── game/
-│   ├── scenario.ts        six decision points and eighteen interventions
-│   ├── simulation.ts      causal model, service state, scoring, endings
-│   └── simulation.test.ts model invariants and all outcome paths
-├── App.tsx                experience state machine and simulation clock
-└── types.ts               shared domain contracts
+```mermaid
+flowchart LR
+  Sources["GitHub · OTel · Flags · Commerce"] --> Normalize["Canonical events"]
+  Normalize --> Graph["Temporal evidence graph"]
+  Normalize --> Metrics["Metric series"]
+  Graph --> Insight["Labeled AI insights"]
+  Metrics --> Insight
+  Insight --> UI["Next.js command center"]
+  UI --> Approval["Human approval boundary"]
+  Approval --> Verify["Action + recovery verification"]
 ```
 
-## Scenario note
+The shipped demo replaces the ingestion layer with fixed, typed data so the full user journey is reproducible. A production evolution would preserve source events in an append-only log and store generated insights separately.
 
-All companies, infrastructure, traffic, revenue, and incident data in FAULTLINE are synthetic. The simulator teaches incident-response tradeoffs; it is not an operational runbook for a real production system.
+Read the deeper documents:
 
-![Sovereign Recovery](docs/screenshots/postmortem-check.png)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Product brief](docs/PRODUCT.md)
+- [Design system](docs/DESIGN_SYSTEM.md)
+- [Research references](docs/REFERENCES.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security](SECURITY.md)
+
+## Accessibility
+
+Threadline targets WCAG 2.2 AA:
+
+- semantic landmarks and a skip link;
+- visible keyboard focus and minimum control sizes;
+- state labels that do not depend on color;
+- reduced-motion behavior;
+- native dialog focus management;
+- accessible names for charts and metric controls;
+- graph information available as a timeline and evidence table;
+- responsive completion of the incident-review flow down to 320 CSS px.
+
+## Research lineage
+
+The information architecture draws from primary-source research across Linear, GitHub, Vercel, Sentry, Datadog, Graphite, and Sourcegraph, plus W3C, OpenTelemetry, and DORA guidance. Threadline does not copy a single product's visual identity: it combines provenance, progressive disclosure, keyboard navigation, topology, and human-supervised agent patterns into its own evidence-thread model.
+
+See [docs/REFERENCES.md](docs/REFERENCES.md) for exact sources and the design decisions informed by each.
+
+## License
+
+MIT © 2026 Jun Lee. See [LICENSE](LICENSE).
