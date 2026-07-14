@@ -10,6 +10,10 @@
   <img alt="No external APIs" src="https://img.shields.io/badge/external_APIs-none-ff654f?style=flat-square" />
 </p>
 
+<p align="center">
+  <a href="https://junlee122-bot.github.io/something/"><strong>Launch the live incident →</strong></a>
+</p>
+
 ![FAULTLINE command deck](docs/screenshots/cockpit-check.png)
 
 At 02:13 UTC, checkout latency crosses the red line. A global payment path is collapsing from the cache layer into the primary database. You have eight simulated minutes and six irreversible calls to contain it.
