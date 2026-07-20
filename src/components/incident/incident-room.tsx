@@ -14,9 +14,12 @@ import {
   FileCode2,
   Flag,
   GitCommitHorizontal,
+  LockKeyhole,
+  MessageSquareText,
   Pause,
   Play,
   RotateCcw,
+  RadioTower,
   ShieldCheck,
   Sparkles,
   TimerReset,
@@ -166,6 +169,8 @@ export function IncidentRoom() {
         </div>
       </header>
 
+      <IncidentCommandStrip resolved={actionState === "completed"} />
+
       <section aria-label="Customer impact summary" className="mt-5 grid gap-3 sm:grid-cols-3">
         <ImpactMetric label="Checkout conversion" value={`${metrics.conversion[metricIndex].toFixed(1)}%`} change={currentStep >= 5 ? "−7.3% relative" : "within baseline"} points={metrics.conversion.slice(0, metricIndex + 1)} tone="danger" />
         <ImpactMetric label="p95 latency" value={`${metrics.latency[metricIndex].toFixed(2)} s`} change={currentStep >= 4 ? "+171% from baseline" : "baseline 680 ms"} points={metrics.latency.slice(0, metricIndex + 1)} tone="warning" />
@@ -243,6 +248,11 @@ export function IncidentRoom() {
             <div className="flex items-center justify-between"><p className="eyebrow">Leading hypothesis</p><StatusPill tone="success">High confidence</StatusPill></div>
             <h2 className="mt-4 text-base font-medium leading-6">The flag rollout is the leading explanation.</h2>
             <p className="mt-3 text-xs leading-5 text-muted">Code, deployment, trace, and business signals agree. Third-party latency remains a plausible contributing factor.</p>
+            <div className="mt-4 rounded-lg border border-border bg-background/45 p-3">
+              <div className="flex items-center justify-between font-mono text-[8px]"><span className="text-muted">Calibrated confidence</span><span className="text-success">94%</span></div>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.06]" role="meter" aria-label="Hypothesis confidence" aria-valuemin={0} aria-valuemax={100} aria-valuenow={94}><div className="h-full w-[94%] rounded-full bg-gradient-to-r from-signal via-primary to-success" /></div>
+              <p className="mt-3 font-mono text-[7px] leading-4 text-muted"><span className="text-inference">FALSIFIER</span> · latency persists after flag exposure reaches 0%</p>
+            </div>
             <div className="mt-5 grid grid-cols-2 gap-2">
               <div className="rounded-md border border-border bg-panel-soft p-3"><p className="font-mono text-lg text-foreground">7</p><p className="mt-1 text-[9px] text-muted">supporting signals</p></div>
               <div className="rounded-md border border-border bg-panel-soft p-3"><p className="font-mono text-lg text-foreground">1</p><p className="mt-1 text-[9px] text-muted">conflicting signal</p></div>
@@ -294,6 +304,10 @@ export function IncidentRoom() {
           <PreviewRow label="Flag rollout" before="100%" after="0%" changed />
           <PreviewRow label="Affected service" before="checkout-api" after="checkout-api" />
           <div className="rounded-lg border border-border bg-background p-4"><p className="eyebrow">Success criteria</p><p className="mt-2 text-xs leading-5 text-muted">p95 latency stays below 800 ms and error rate below 1.0% for five continuous minutes.</p></div>
+          <div className="grid gap-2 rounded-lg border border-inference/15 bg-inference/[0.035] p-4 font-mono text-[8px] text-muted sm:grid-cols-2">
+            <span><span className="block text-[7px] uppercase tracking-wider text-inference">Authorization</span><span className="mt-1 block text-foreground">Production Operator · 10m TTL</span></span>
+            <span><span className="block text-[7px] uppercase tracking-wider text-inference">Audit record</span><span className="mt-1 block text-foreground">act_2471_flag_0931</span></span>
+          </div>
         </div>
         <div className="flex flex-col-reverse gap-2 border-t border-border bg-panel-soft p-4 sm:flex-row sm:justify-end">
           <button type="button" onClick={() => approvalDialog.current?.close()} className="h-10 rounded-md border border-border px-4 text-[11px] text-muted hover:text-foreground">Cancel</button>
@@ -307,6 +321,28 @@ export function IncidentRoom() {
 function ImpactMetric({ label, value, change, points, tone }: { label: string; value: string; change: string; points: number[]; tone: "danger" | "warning" }) {
   const changeClass = change.includes("baseline") ? "text-success" : tone === "danger" ? "text-danger" : "text-warning";
   return <article className="panel grid min-h-[112px] grid-cols-[1fr_110px] gap-3 p-4"><div><p className="text-[10px] text-muted">{label}</p><p className="mt-3 font-mono text-xl font-medium tabular">{value}</p><p className={`mt-1 font-mono text-[8px] ${changeClass}`}>{change}</p></div><Sparkline points={points} label={`${label} trend`} tone={tone} className="self-end" /></article>;
+}
+
+function IncidentCommandStrip({ resolved }: { resolved: boolean }) {
+  return (
+    <section aria-label="Incident command protocol" className="panel panel-luminous mt-4 overflow-hidden">
+      <div className="flex flex-wrap items-center gap-3 border-b border-border bg-panel-soft px-4 py-2.5 font-mono text-[8px] text-muted">
+        <span className="inline-flex items-center gap-1.5 text-foreground"><RadioTower aria-hidden="true" className={cn("size-3.5", resolved ? "text-success" : "text-danger")} />Incident command protocol</span>
+        <span>IC-4 · declared 09:24 KST</span>
+        <span className="ms-auto inline-flex items-center gap-1.5"><span className={cn("size-1.5 rounded-full", resolved ? "bg-success" : "live-dot bg-danger text-danger")} />{resolved ? "recovery verified" : "bridge recording"}</span>
+      </div>
+      <div className="grid divide-y divide-border sm:grid-cols-2 sm:[&>*:nth-child(odd)]:border-e xl:grid-cols-4 xl:divide-y-0 xl:[&>*]:border-e xl:[&>*:last-child]:border-e-0">
+        <ProtocolItem icon={UserRoundCheck} label="Command structure" value="A. Morgan · Incident Commander" detail="J. Lee operations · S. Park comms" tone="text-primary" />
+        <ProtocolItem icon={MessageSquareText} label="Stakeholder update" value={resolved ? "Resolved note published" : "Next update · 09:34 KST"} detail="Status page · Support · Commerce leadership" tone="text-signal" />
+        <ProtocolItem icon={LockKeyhole} label="Change control" value="Commerce deploy freeze active" detail="Exception requires IC + Production Operator" tone="text-warning" />
+        <ProtocolItem icon={ShieldCheck} label="Incident objectives" value={resolved ? "3 / 3 objectives complete" : "2 / 3 objectives in progress"} detail={resolved ? "impact · containment · recovery" : "contain · identify · recover safely"} tone={resolved ? "text-success" : "text-inference"} />
+      </div>
+    </section>
+  );
+}
+
+function ProtocolItem({ icon: Icon, label, value, detail, tone }: { icon: typeof Activity; label: string; value: string; detail: string; tone: string }) {
+  return <article className="flex min-w-0 gap-3 p-4"><span className={cn("grid size-8 shrink-0 place-items-center rounded-md border border-border bg-background", tone)}><Icon aria-hidden="true" className="size-3.5" /></span><div className="min-w-0"><p className="font-mono text-[7px] uppercase tracking-[0.1em] text-muted">{label}</p><p className="mt-1.5 truncate text-[10px] font-medium">{value}</p><p className="mt-1 truncate font-mono text-[7px] text-muted">{detail}</p></div></article>;
 }
 
 function Legend({ color, label }: { color: string; label: string }) { return <span className="flex items-center gap-1.5"><span className={`size-1.5 rounded-full ${color}`} />{label}</span>; }

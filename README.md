@@ -21,9 +21,11 @@ The product deliberately avoids the “chatbot on top of a dashboard” pattern:
 
 - AI claims are labeled as **observed**, **inferred**, or **proposed**.
 - Every conclusion links back to evidence, freshness, and conflicting signals.
+- Source health and snapshot freshness stay visible as a shared evidence-plane contract across product routes.
 - The system can be replayed, so the interface shows what was knowable at each moment.
 - Agent actions expose the target, blast radius, rollback plan, approver, and success criteria.
 - Recovery is not declared until a verification window passes.
+- Command views preserve ownership, change freezes, stakeholder cadence, and shift-handoff state—not only telemetry.
 
 ## The demo story
 
@@ -53,10 +55,10 @@ Open `/lab` to run FAULTLINE scenario 047: an eight-minute cache-stampede incide
 | Route | Experience |
 | --- | --- |
 | `/` | Cinematic product narrative and live causal-thread preview |
-| `/command` | Evidence-backed briefing, pulse metrics, causal graph, attention queue |
+| `/command` | Evidence-backed briefing, decision frame, causal graph, attention queue, shift handoff |
 | `/incidents` | Active and historical incident operating view |
-| `/incidents/inc-2471` | Time replay, synchronized telemetry, evidence inspector, safe mitigation |
-| `/lab` | FAULTLINE crisis simulation, six command gates, live system model, scored debrief |
+| `/incidents/inc-2471` | Time replay, incident-command protocol, evidence inspector, safe mitigation |
+| `/lab` | FAULTLINE crisis simulation, six command gates, live system model, competency debrief |
 | `/map` | Interactive service topology with health/change/ownership modes |
 | `/changes` | Searchable, explainable change-risk intelligence |
 | `/agents` | Agent mission control with inspectable steps and approvals |

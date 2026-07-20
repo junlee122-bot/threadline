@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Bell, CircleHelp, Radio } from "lucide-react";
 import { AppNav } from "@/components/shell/app-nav";
 import { CommandMenu } from "@/components/shell/command-menu";
+import { OperationalStatusBar } from "@/components/shell/operational-status-bar";
 
 export function ProductShell({ children }: { children: React.ReactNode }) {
   return (
@@ -35,7 +36,8 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
             </span>
           </div>
         </header>
-        <main id="main-content" className="min-h-[calc(100vh-3.5rem)] pb-24 md:pb-0">
+        <OperationalStatusBar />
+        <main id="main-content" className="min-h-[calc(100vh-5.75rem)] pb-24 md:pb-0">
           {children}
         </main>
       </div>

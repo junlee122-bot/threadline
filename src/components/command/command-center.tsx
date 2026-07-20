@@ -8,6 +8,7 @@ import {
   Bot,
   ChevronDown,
   CircleCheck,
+  ClipboardCheck,
   Clock3,
   Code2,
   ExternalLink,
@@ -15,12 +16,15 @@ import {
   Gamepad2,
   GitCommitHorizontal,
   GitPullRequest,
+  LockKeyhole,
+  MessageSquareText,
   MoreHorizontal,
   Radio,
   ShieldAlert,
   Sparkles,
   TimerReset,
   UsersRound,
+  Workflow,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -104,13 +108,19 @@ export function CommandCenter() {
 
       {!briefingDismissed && (
         <section aria-labelledby="briefing-title" className="mt-7 grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(310px,.7fr)]">
-          <article className="panel relative overflow-hidden border-primary/15 p-5 sm:p-7">
+          <article className="panel panel-luminous relative overflow-hidden border-primary/15 p-5 sm:p-7">
             <div aria-hidden="true" className="absolute end-[-100px] top-[-180px] size-[420px] rounded-full bg-primary/[0.045] blur-3xl" />
             <button type="button" onClick={() => setBriefingDismissed(true)} className="absolute end-3 top-3 grid size-8 place-items-center rounded-md text-muted hover:bg-white/[0.04] hover:text-foreground" aria-label="Dismiss briefing"><X aria-hidden="true" className="size-3.5" /></button>
             <div className="relative">
               <div className="flex flex-wrap items-center gap-2"><span className="grid size-8 place-items-center rounded-lg border border-primary/20 bg-primary/[0.07] text-primary"><Sparkles aria-hidden="true" className="size-4" /></span><p className="eyebrow text-primary">Threadline briefing</p><StatusPill tone="success">High confidence</StatusPill><span className="font-mono text-[8px] text-muted">updated 42s ago</span></div>
               <h2 id="briefing-title" className="mt-5 max-w-3xl text-balance text-xl font-medium leading-7 tracking-[-0.028em] sm:text-[1.55rem] sm:leading-9">Checkout is the only customer-facing regression.</h2>
               <p className="mt-3 max-w-3xl text-xs leading-6 text-muted sm:text-sm">Since 09:18, p95 latency is up 171% and conversion is down 7.3%. The strongest shared change is the <code className="rounded bg-white/[0.045] px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">instant-tax-v2</code> rollout on <code className="rounded bg-white/[0.045] px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">checkout-api@2.18.0</code>.</p>
+              <dl className="mt-5 grid overflow-hidden rounded-lg border border-border bg-background/45 sm:grid-cols-2 lg:grid-cols-4">
+                <BriefingFact label="Decision frame" value="Contain, then verify" detail="reversible first" icon={Workflow} />
+                <BriefingFact label="Accountable owner" value="A. Morgan" detail="Commerce Core" icon={UsersRound} />
+                <BriefingFact label="Recovery gate" value="p95 < 800 ms" detail="5 continuous min" icon={ClipboardCheck} />
+                <BriefingFact label="Causal confidence" value="94%" detail="7 support · 1 conflict" icon={Sparkles} progress={94} />
+              </dl>
               <div className="mt-6 flex flex-col gap-2 sm:flex-row">
                 <Link href="/incidents/inc-2471" className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-[11px] font-semibold text-primary-foreground">Open incident<ArrowRight aria-hidden="true" className="size-3.5" /></Link>
                 <button type="button" onClick={() => setEvidenceOpen((open) => !open)} className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border px-4 text-[11px] text-muted hover:text-foreground"><FileSearch aria-hidden="true" className="size-3.5" />Inspect evidence</button>
@@ -181,8 +191,42 @@ export function CommandCenter() {
           <div className="divide-y divide-border">{agentActivity.map((run) => { const Icon = run.icon; return <div key={run.title} className="flex items-center gap-3 px-5 py-3.5"><span className={cn("grid size-7 place-items-center rounded-md bg-white/[0.035]", toneText[run.tone])}><Icon aria-hidden="true" className="size-3.5" /></span><span className="min-w-0 flex-1"><span className="block truncate text-[10px] font-medium">{run.title}</span><span className="mt-0.5 block truncate font-mono text-[8px] text-muted">{run.detail}</span></span><span className="font-mono text-[8px] text-muted">{run.time}</span></div>; })}</div>
         </section>
       </div>
+
+      <section aria-labelledby="handoff-title" className="panel panel-luminous mt-4 overflow-hidden">
+        <div className="grid gap-5 border-b border-border px-5 py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="flex items-start gap-3">
+            <span className="signal-sheen grid size-10 shrink-0 place-items-center rounded-lg border border-primary/20 bg-primary/[0.06] text-primary"><ClipboardCheck aria-hidden="true" className="size-4" /></span>
+            <div>
+              <div className="flex flex-wrap items-center gap-2"><p id="handoff-title" className="text-sm font-medium">Shift handoff · 10:00 KST</p><StatusPill tone="success">Ready to acknowledge</StatusPill></div>
+              <p className="mt-1 max-w-3xl text-[10px] leading-5 text-muted">A concise operating contract for the next responder: what changed, what is constrained, and which signal closes the loop.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 lg:justify-end">
+            <span className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 font-mono text-[8px] text-muted"><LockKeyhole aria-hidden="true" className="size-3.5 text-warning" />checkout deploy hold · 68m</span>
+            <Link href="/reports" className="inline-flex h-9 items-center gap-2 rounded-md bg-foreground px-3 text-[10px] font-semibold text-background">Open reliability review<ArrowRight aria-hidden="true" className="size-3.5" /></Link>
+          </div>
+        </div>
+        <div className="grid divide-y divide-border md:grid-cols-3 md:divide-x md:divide-y-0">
+          <HandoffItem eyebrow="Watch" title="Checkout recovery window" detail="Keep 2h burn below 1×; page Commerce Core if p95 crosses 800 ms for three minutes." meta="owner · J. Lee" tone="warning" />
+          <HandoffItem eyebrow="Constraint" title="Risky changes remain paused" detail="PR #2091 and all checkout rollouts require Production Operator approval until 11:40 KST." meta="policy · POL-017" tone="inference" />
+          <HandoffItem eyebrow="Next update" title="Customer note due at 10:05" detail="Publish verified recovery, impact window, and the remaining monitoring condition to the status page." meta="comms · S. Park" tone="signal" />
+        </div>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 bg-panel-soft px-5 py-3 font-mono text-[8px] text-muted">
+          <span className="inline-flex items-center gap-1.5"><MessageSquareText aria-hidden="true" className="size-3 text-signal" />bridge transcript linked</span>
+          <span className="inline-flex items-center gap-1.5"><Workflow aria-hidden="true" className="size-3 text-primary" />7 evidence objects pinned</span>
+          <span className="ms-auto">briefing hash · brf_2471_093218</span>
+        </div>
+      </section>
     </div>
   );
 }
 
 function MiniStat({ label, value, tone }: { label: string; value: string; tone: ToneKey }) { return <div className="rounded-md border border-border bg-panel-soft p-3"><p className="text-[9px] text-muted">{label}</p><p className={cn("mt-2 font-mono text-lg", toneText[tone])}>{value}</p></div>; }
+
+function BriefingFact({ label, value, detail, icon: Icon, progress }: { label: string; value: string; detail: string; icon: LucideIcon; progress?: number }) {
+  return <div className="border-b border-border p-3.5 last:border-b-0 sm:[&:nth-child(odd)]:border-e lg:border-b-0 lg:border-e lg:last:border-e-0"><dt className="flex items-center gap-1.5 font-mono text-[8px] uppercase tracking-[0.08em] text-muted"><Icon aria-hidden="true" className="size-3 text-primary" />{label}</dt><dd className="mt-2 text-[11px] font-medium">{value}</dd><dd className="mt-1 font-mono text-[7px] text-muted">{detail}</dd>{progress !== undefined && <span className="mt-2 block h-0.5 overflow-hidden rounded-full bg-white/[0.06]" aria-label={`${label} ${progress}%`}><span className="block h-full rounded-full bg-gradient-to-r from-signal to-primary" style={{ width: `${progress}%` }} /></span>}</div>;
+}
+
+function HandoffItem({ eyebrow, title, detail, meta, tone }: { eyebrow: string; title: string; detail: string; meta: string; tone: ToneKey }) {
+  return <article className="group p-5 transition-colors hover:bg-white/[0.018]"><div className="flex items-center justify-between gap-3"><p className={cn("font-mono text-[8px] font-medium uppercase tracking-[0.12em]", toneText[tone])}>{eyebrow}</p><ArrowRight aria-hidden="true" className="size-3 text-muted transition-transform group-hover:translate-x-0.5" /></div><h3 className="mt-3 text-[12px] font-medium">{title}</h3><p className="mt-2 text-[10px] leading-5 text-muted">{detail}</p><p className="mt-4 font-mono text-[8px] text-muted">{meta}</p></article>;
+}

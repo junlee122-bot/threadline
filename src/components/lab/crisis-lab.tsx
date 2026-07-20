@@ -701,6 +701,15 @@ function LabPostmortem({ result, records, onRestart, onDownload }: { result: Lab
     contained: { eyebrow: "Incident contained", title: "The platform survived. The recovery is incomplete.", description: "You preserved the critical path, but one or more decisions traded full recovery for safety, time, or customer experience.", tone: "warning" as const },
     cascade: { eyebrow: "System cascade", title: "The visible symptom won the response window.", description: "The intervention amplified pressure or restored traffic before the underlying cache and database dynamics were safe.", tone: "danger" as const },
   }[result.ending];
+  const verdictScore = (record: LabDecisionRecord) => record.verdict === "optimal" ? 100 : record.verdict === "mixed" ? 68 : 24;
+  const average = (items: LabDecisionRecord[]) => Math.round(items.reduce((total, record) => total + verdictScore(record), 0) / Math.max(items.length, 1));
+  const competencies = [
+    { label: "Causal diagnosis", score: average(records.slice(0, 1)), detail: "trace before symptom", icon: ScanSearch, tone: "signal" as const },
+    { label: "Load containment", score: average(records.slice(1, 4)), detail: "coalesce · gate · degrade", icon: ShieldCheck, tone: "primary" as const },
+    { label: "Recovery discipline", score: average(records.slice(4, 6)), detail: "warm progressively · SLO gate", icon: TrendingDown, tone: "success" as const },
+    { label: "Command efficiency", score: Math.min(100, Math.round((result.score + result.accuracy) / 2)), detail: `${formatLabTime(result.mttrSeconds)} modeled MTTR`, icon: TimerReset, tone: "inference" as const },
+  ];
+  const weakest = [...competencies].sort((a, b) => a.score - b.score)[0];
   return (
     <div className="mx-auto max-w-[1540px] px-4 py-6 sm:px-6 sm:py-8">
       <PageHeader eyebrow={`Crisis Lab · ${ending.eyebrow}`} title={ending.title} description={ending.description} actions={<StatusPill tone={ending.tone} dot>Grade {result.grade}</StatusPill>} />
@@ -721,6 +730,30 @@ function LabPostmortem({ result, records, onRestart, onDownload }: { result: Lab
         <ResultMetric icon={BrainCircuit} label="Decision accuracy" value={`${result.accuracy}%`} detail={`${records.filter((record) => record.verdict === "optimal").length} optimal commands`} />
         <ResultMetric icon={UsersRound} label="Peak affected" value={result.peakAffectedUsers.toLocaleString("en-US")} detail="modeled users" />
         <ResultMetric icon={ShieldCheck} label="Revenue protected" value={`$${result.revenueProtected.toLocaleString("en-US")}`} detail={`$${result.revenueLost.toLocaleString("en-US")} lost`} />
+      </section>
+
+      <section aria-labelledby="competency-title" className="panel panel-luminous mt-4 overflow-hidden">
+        <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
+          <div><p id="competency-title" className="text-xs font-medium">Incident command competency</p><p className="mt-1 font-mono text-[8px] text-muted">SRE response rubric · deterministic evidence from this run</p></div>
+          <StatusPill tone="primary" className="ms-auto">4 dimensions</StatusPill>
+        </div>
+        <div className="grid lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,.55fr)]">
+          <div className="grid gap-px bg-border sm:grid-cols-2">
+            {competencies.map((competency) => (
+              <CompetencyBar key={competency.label} {...competency} />
+            ))}
+          </div>
+          <aside className="border-t border-border bg-panel-soft p-5 lg:border-s lg:border-t-0">
+            <div className="flex items-center gap-2"><BrainCircuit aria-hidden="true" className="size-4 text-inference" /><p className="eyebrow text-inference">Assessor readout</p></div>
+            <h3 className="mt-4 text-sm font-medium leading-6">{result.ending === "sovereign" ? "You controlled both the incident and the recovery envelope." : `Prioritize ${weakest.label.toLowerCase()} in the next run.`}</h3>
+            <p className="mt-2 text-[10px] leading-5 text-muted">{result.ending === "sovereign" ? "Every intervention reduced causal pressure while preserving the checkout path. The progressive warm-up prevented a second-wave regression." : `The ${weakest.label.toLowerCase()} dimension scored ${weakest.score}. Re-run the scenario and compare the system model before committing at that gate.`}</p>
+            <dl className="mt-5 space-y-2 border-t border-border pt-4 font-mono text-[8px]">
+              <ActionReadout label="Reference match" value={`${records.filter((record) => record.verdict === "optimal").length} / 6 decisions`} />
+              <ActionReadout label="Recovery safety" value={result.ending === "sovereign" ? "No second wave" : "Review required"} />
+              <ActionReadout label="Run attestation" value={`lab047-${result.score}-${records.length}`} />
+            </dl>
+          </aside>
+        </div>
       </section>
 
       <section className="panel mt-4 overflow-hidden">
@@ -748,4 +781,14 @@ function LabPostmortem({ result, records, onRestart, onDownload }: { result: Lab
 
 function ResultMetric({ icon: Icon, label, value, detail }: { icon: typeof Activity; label: string; value: string; detail: string }) {
   return <div className="panel p-4 sm:p-5"><div className="flex items-center gap-2 text-muted"><Icon aria-hidden="true" className="size-3.5" /><span className="font-mono text-[8px] uppercase tracking-[0.08em]">{label}</span></div><p className="mt-4 font-mono text-xl tabular tracking-[-0.035em]">{value}</p><p className="mt-1 font-mono text-[7px] text-muted">{detail}</p></div>;
+}
+
+function CompetencyBar({ icon: Icon, label, score, detail, tone }: { icon: typeof Activity; label: string; score: number; detail: string; tone: "signal" | "primary" | "success" | "inference" }) {
+  const toneClass = { signal: "text-signal", primary: "text-primary", success: "text-success", inference: "text-inference" }[tone];
+  const fillClass = { signal: "from-signal/55 to-signal", primary: "from-primary/55 to-primary", success: "from-success/55 to-success", inference: "from-inference/55 to-inference" }[tone];
+  return <article className="bg-panel p-5"><div className="flex items-start gap-3"><span className={cn("grid size-8 shrink-0 place-items-center rounded-md border border-border bg-background", toneClass)}><Icon aria-hidden="true" className="size-3.5" /></span><div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-3"><h3 className="text-[11px] font-medium">{label}</h3><span className={cn("font-mono text-sm tabular", toneClass)}>{score}</span></div><p className="mt-1 font-mono text-[7px] text-muted">{detail}</p><div className="mt-3 h-1 overflow-hidden rounded-full bg-white/[0.06]" role="meter" aria-label={`${label} ${score} out of 100`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={score}><div className={cn("h-full rounded-full bg-gradient-to-r", fillClass)} style={{ width: `${score}%` }} /></div></div></div></article>;
+}
+
+function ActionReadout({ label, value }: { label: string; value: string }) {
+  return <div className="flex items-center justify-between gap-3"><dt className="text-muted">{label}</dt><dd className="text-end text-foreground">{value}</dd></div>;
 }

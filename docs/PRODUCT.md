@@ -32,6 +32,14 @@ An agent cannot hide the target or blast radius. Before approval, the interface 
 
 Latency and error rate matter because of their effect on completed checkouts. The command center places SLO burn next to conversion and modeled revenue impact without presenting a fake universal health score.
 
+### Operations are an explicit contract
+
+An incident view is incomplete without command ownership, a communications cadence, change controls, and measurable exit criteria. Threadline keeps these operational commitments beside the evidence so the next responder can acknowledge a handoff without reconstructing policy from chat history.
+
+### Training scores transferable skills
+
+Crisis Lab separates causal diagnosis, load containment, recovery discipline, and command efficiency. The debrief grades observable decisions against a deterministic reference path and never invents cohort percentiles or opaque AI judgments.
+
 ## Demo world
 
 Workspace: **Meridian Market · Demo**
@@ -60,11 +68,11 @@ Workspace: **Meridian Market · Demo**
 
 ### Two-minute briefing
 
-Open `/command`, identify the only customer-facing regression, inspect the evidence, and enter the incident without searching across tools.
+Open `/command`, identify the only customer-facing regression, inspect the evidence, confirm owner and success gate, and enter the incident without searching across tools. The shift-handoff contract carries forward active watches, policy constraints, and the next stakeholder update.
 
 ### Incident investigation
 
-Open `/incidents/inc-2471`, replay the timeline, select any graph object, compare synchronized metrics, and challenge the leading hypothesis through source evidence.
+Open `/incidents/inc-2471`, confirm the incident command structure and change freeze, replay the timeline, select any graph object, compare synchronized metrics, and challenge the leading hypothesis through source evidence and its explicit falsifier.
 
 ### Safe mitigation
 
