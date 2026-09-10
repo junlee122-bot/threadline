@@ -34,6 +34,7 @@ type AgentStep = {
   label: string;
   detail: string;
   state: "complete" | "active" | "queued" | "warning";
+  kind?: "approval";
   time?: string;
 };
 
@@ -156,7 +157,7 @@ const agents: AgentRun[] = [
       { label: "Inspect dependency diff", detail: "No transitive runtime packages added", state: "complete", time: "2m 41s" },
       { label: "Compare canary traces", detail: "p95 authorization latency +0.7%", state: "complete", time: "6m 03s" },
       { label: "Check PCI controls", detail: "Attestation and redaction passed", state: "complete", time: "1m 52s" },
-      { label: "Human rollout decision", detail: "Money Movement owner approval required", state: "warning" },
+      { label: "Human rollout decision", detail: "Money Movement owner approval required", state: "warning", kind: "approval" },
     ],
   },
   {
@@ -211,7 +212,7 @@ const agents: AgentRun[] = [
 
 const filters: Array<{ id: AgentFilter; label: string }> = [
   { id: "all", label: "All" },
-  { id: "running", label: "Running" },
+  { id: "running", label: "In progress" },
   { id: "review", label: "Needs review" },
   { id: "scheduled", label: "Scheduled" },
 ];
@@ -226,27 +227,29 @@ const accentStyles = {
 function matchesFilter(status: AgentRuntimeStatus, filter: AgentFilter) {
   if (filter === "all") return true;
   if (filter === "running") return status === "running" || status === "paused";
-  if (filter === "review") return status === "review" || status === "reviewed";
+  if (filter === "review") return status === "review";
   return status === "scheduled";
 }
 
 function filterForStatus(status: AgentRuntimeStatus): AgentFilter {
   if (status === "paused") return "running";
-  if (status === "reviewed") return "review";
+  if (status === "reviewed") return "all";
   return status;
 }
 
 function displayedProgress(agent: AgentRun, status: AgentRuntimeStatus) {
   if (status === "scheduled") return 0;
-  if (status === "reviewed") return 100;
-  if (agent.status === "scheduled") return 8;
+  if (status === "reviewed") {
+    const completed = agent.steps.filter((step) => step.state === "complete" || step.kind === "approval").length;
+    return Math.round((completed / agent.steps.length) * 100);
+  }
   return agent.progress;
 }
 
 function runtimeSummary(agent: AgentRun, status: AgentRuntimeStatus, progress: number) {
   if (status === "scheduled") return agent.eta;
   if (status === "review") return "Decision pending";
-  if (status === "reviewed") return "100%";
+  if (status === "reviewed") return `Reviewed · ${progress}%`;
   if (status === "paused") return `Paused · ${progress}%`;
   return `${progress}%`;
 }
@@ -256,15 +259,14 @@ function traceSummary(agent: AgentRun, status: AgentRuntimeStatus) {
   if (status === "review") return "Human decision pending";
   if (status === "reviewed") return "Review complete";
   if (status === "paused") return `Paused · ${agent.eta}`;
-  return agent.status === "scheduled" ? "ETA calculating" : `ETA ${agent.eta}`;
+  return `Snapshot ETA ${agent.eta}`;
 }
 
 function displayedSteps(agent: AgentRun, status: AgentRuntimeStatus): AgentStep[] {
   if (status === "reviewed") {
-    return agent.steps.map((step) => ({ ...step, state: "complete", time: step.state === "warning" ? "reviewed" : step.time }));
-  }
-  if ((status === "running" || status === "paused") && agent.status === "scheduled") {
-    return agent.steps.map((step, index) => index === 0 ? { ...step, state: "active", time: status === "paused" ? "paused" : "in progress" } : step);
+    return agent.steps.map((step) => step.kind === "approval"
+      ? { ...step, state: "complete", detail: "Approval gate acknowledged in this demo. Production rollout has not been executed.", time: "demo review" }
+      : step);
   }
   return agent.steps;
 }
@@ -395,13 +397,14 @@ export function AgentOperations() {
           </div>
         </div>
 
-        <AgentDetail agent={selectedAgent} runtimeStatus={selectedRuntimeStatus} onStatusChange={(status) => updateRuntimeStatus(selectedAgent.id, status)} />
+        <AgentDetail key={selectedAgent.id} agent={selectedAgent} runtimeStatus={selectedRuntimeStatus} onStatusChange={(status) => updateRuntimeStatus(selectedAgent.id, status)} />
       </div>
     </section>
   );
 }
 
 function AgentDetail({ agent, runtimeStatus, onStatusChange }: { agent: AgentRun; runtimeStatus: AgentRuntimeStatus; onStatusChange: (status: AgentRuntimeStatus) => void }) {
+  const [previewOpen, setPreviewOpen] = useState(false);
   const Icon = agent.icon;
   const accent = accentStyles[agent.accent];
   const progress = displayedProgress(agent, runtimeStatus);
@@ -432,12 +435,12 @@ function AgentDetail({ agent, runtimeStatus, onStatusChange }: { agent: AgentRun
               <Play className="size-3" aria-hidden="true" /> Resume
             </button>
           ) : runtimeStatus === "scheduled" ? (
-            <button type="button" onClick={() => onStatusChange("running")} className="flex h-8 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-[10px] font-medium text-white/60 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7f34b]/70">
-              <Play className="size-3" aria-hidden="true" /> Run now
+            <button type="button" aria-expanded={previewOpen} aria-controls="agent-plan-preview" onClick={() => setPreviewOpen((open) => !open)} className="flex h-8 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-[10px] font-medium text-white/60 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7f34b]/70">
+              <SearchCode className="size-3" aria-hidden="true" /> {previewOpen ? "Close preview" : "Preview run"}
             </button>
           ) : (
             <button type="button" disabled={runtimeStatus === "reviewed"} onClick={() => onStatusChange("reviewed")} className="flex h-8 items-center gap-1.5 rounded-lg bg-[#b7f34b] px-3 text-[10px] font-semibold text-[#14200d] hover:bg-[#c9fa75] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7f34b] focus-visible:ring-offset-2 focus-visible:ring-offset-[#090d0b] disabled:opacity-60">
-              <FileCheck2 className="size-3" aria-hidden="true" /> {runtimeStatus === "reviewed" ? "Reviewed" : "Mark reviewed"}
+              <FileCheck2 className="size-3" aria-hidden="true" /> {runtimeStatus === "reviewed" ? "Review recorded" : "Record demo review"}
             </button>
           )}
           <button type="button" disabled aria-label="More agent options unavailable in demo" className="grid size-8 place-items-center rounded-lg border border-white/10 text-white/20">
@@ -447,6 +450,18 @@ function AgentDetail({ agent, runtimeStatus, onStatusChange }: { agent: AgentRun
       </div>
 
       <div className="p-5 sm:p-6">
+        {previewOpen && runtimeStatus === "scheduled" ? (
+          <section id="agent-plan-preview" aria-label="Agent run preview" className="mb-5 rounded-xl border border-violet-300/20 bg-violet-300/[0.045] p-4">
+            <p className="text-xs font-semibold text-violet-200">Execution plan preview</p>
+            <p className="mt-2 text-xs leading-5 text-white/65">Inspect the {agent.steps.length}-step plan and {agent.context.length} source inputs below. This preview does not launch a background job; the run remains scheduled.</p>
+            <dl className="mt-4 grid gap-3 text-[10px] sm:grid-cols-3">
+              <div><dt className="text-white/45">Scope</dt><dd className="mt-1 font-mono text-white/80">{agent.target}</dd></div>
+              <div><dt className="text-white/45">Planned output</dt><dd className="mt-1 text-white/80">{agent.output}</dd></div>
+              <div><dt className="text-white/45">Publication boundary</dt><dd className="mt-1 text-white/80">Owner verification required</dd></div>
+            </dl>
+          </section>
+        ) : null}
+        {runtimeStatus === "reviewed" ? <p role="status" className="mb-5 rounded-lg border border-cyan-300/20 bg-cyan-300/[0.04] p-3 text-[11px] leading-5 text-cyan-100/80">Demo review recorded. Only the human approval gate is acknowledged; warning findings and unfinished checks remain unchanged. No production action was sent.</p> : null}
         <div className="rounded-xl border border-white/[0.08] bg-white/[0.025] p-4 sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="max-w-2xl">
@@ -467,8 +482,8 @@ function AgentDetail({ agent, runtimeStatus, onStatusChange }: { agent: AgentRun
           <div className="mt-4 grid gap-2 sm:grid-cols-4">
             <DetailMetric label="Target" value={agent.target} />
             <DetailMetric label="Trigger" value={agent.trigger} />
-            <DetailMetric label="Elapsed" value={runtimeStatus === "running" && agent.status === "scheduled" ? "Just started" : agent.elapsed} mono />
-            <DetailMetric label="Confidence" value={`${agent.confidence}%`} mono />
+            <DetailMetric label="Snapshot elapsed" value={agent.elapsed} mono />
+            <DetailMetric label="Evidence inputs" value={`${agent.context.length} sources`} mono />
           </div>
         </div>
 

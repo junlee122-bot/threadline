@@ -1,22 +1,44 @@
 import { DEMO_NOW, incidentSummary, reportMetrics } from "@/lib/demo-data";
-
-const periods = {
-  "7d": "Last 7 days",
-  "30d": "Last 30 days",
-  "90d": "Quarter",
-} as const;
-
-type Period = keyof typeof periods;
+import { impactReports, reportCsv, reportMethodology, reportSeries, resolveReportPeriod } from "@/lib/impact-reports";
 
 export function GET(request: Request) {
-  const requestedPeriod = new URL(request.url).searchParams.get("period") ?? "7d";
-  const period: Period = requestedPeriod in periods ? (requestedPeriod as Period) : "7d";
+  const params = new URL(request.url).searchParams;
+  const period = resolveReportPeriod(params.get("period"));
+  const report = impactReports[period];
+  if (params.get("format") === "csv") {
+    return new Response(reportCsv(period), {
+      headers: {
+        "Cache-Control": "public, max-age=300",
+        "Content-Disposition": `attachment; filename="threadline-impact-${period}.csv"`,
+        "Content-Type": "text/csv; charset=utf-8",
+      },
+    });
+  }
+
   const payload = {
     product: "Threadline",
     workspace: "Meridian Market · Demo",
-    period: { id: period, label: periods[period] },
+    period: { id: period, label: report.label },
     generatedAt: DEMO_NOW,
     source: "deterministic-demo",
+    report: {
+      startDate: report.startDate,
+      endDate: report.endDate,
+      headline: report.headline,
+      modeledHours: report.modeledHours,
+      trackedChanges: report.trackedChanges,
+      analyzedChanges: report.analyzedChanges,
+      metrics: report.metrics.map(({ label, value, delta, positive, direction, detail }) => ({ label, value, delta, positive, direction, detail })),
+      series: reportSeries(period),
+      riskMix: report.riskMix.map(({ label, value, count }) => ({ label, value, count })),
+      services: report.services,
+      narrative: report.narrative,
+      methodology: reportMethodology,
+    },
+    snapshotContext: {
+      note: "The incident, dora, slos, and impact fields below preserve the original incident snapshot. They are not aggregates for the selected report period.",
+      timestamp: DEMO_NOW,
+    },
     incident: incidentSummary,
     dora: reportMetrics.dora,
     slos: reportMetrics.slos,

@@ -105,7 +105,8 @@ export function CausalGraph({
                 strokeOpacity={edge.state === "inferred" ? 0.62 : 0.46}
                 strokeWidth={edge.state === "approved" ? 2.5 : 1.5}
                 strokeDasharray={edge.state === "inferred" ? "7 6" : undefined}
-                className={edge.state !== "approved" ? "thread-path" : undefined}
+                className={edge.state === "inferred" ? "thread-path" : undefined}
+                style={{ strokeDasharray: edge.state === "inferred" ? "7 6" : "none" }}
                 vectorEffect="non-scaling-stroke"
               />
             );

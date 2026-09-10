@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function AgentsPage() {
-  return <AgentOperations />;
+  return <div className="mx-auto max-w-[1540px] p-4 sm:p-6 xl:p-8"><AgentOperations /></div>;
 }

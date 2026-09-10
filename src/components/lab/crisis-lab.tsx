@@ -28,9 +28,11 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusPill } from "@/components/ui/status-pill";
+import { LabLearningReview, LabOutcomeReview } from "@/components/lab/lab-debrief";
 import {
   applyLabChoice,
   buildLabResult,
+  canonicalizeLabRecords,
   computeLabSnapshot,
   createLabReport,
   formatLabTime,
@@ -96,22 +98,22 @@ const TOPOLOGY_POSITIONS: Record<LabServiceId, { x: number; y: number }> = {
 const EVIDENCE = [
   { at: 0, source: "Deploy", detail: "release-24.7.13 completed", tone: "text-muted" },
   { at: 32, source: "Cache", detail: "38 hot-key TTLs expired together", tone: "text-warning" },
-  { at: 92, source: "Trace", detail: "origin reads +1,840%", tone: "text-signal" },
-  { at: 148, source: "Database", detail: "pool crossed 80% saturation", tone: "text-danger" },
-  { at: 222, source: "Commerce", detail: "checkout conversion −8.2%", tone: "text-danger" },
-  { at: 312, source: "Control", detail: "recovery window detected", tone: "text-success" },
-  { at: 400, source: "SLO", detail: "traffic gate ready for validation", tone: "text-primary" },
+  { at: 92, source: "Scenario", detail: "origin-read pressure increases", tone: "text-signal" },
+  { at: 148, source: "Scenario", detail: "database contention pressure increases", tone: "text-danger" },
+  { at: 222, source: "Scenario", detail: "checkout cascade pressure increases", tone: "text-danger" },
+  { at: 312, source: "Control", detail: "cache warm-up decision approaching", tone: "text-signal" },
+  { at: 400, source: "SLO", detail: "traffic restoration gate approaching", tone: "text-primary" },
 ];
 
 const SYSTEM_LOGS = [
   { at: 0, level: "INFO", message: "scenario-047 loaded / production twin isolated" },
-  { at: 26, level: "WARN", message: "catalog-cache miss ratio outside baseline" },
-  { at: 74, level: "WARN", message: "origin request fan-out accelerating" },
-  { at: 126, level: "ERROR", message: "checkout p95 breached 800ms objective" },
-  { at: 165, level: "ERROR", message: "pg-primary pool utilization above 90%" },
-  { at: 238, level: "CRIT", message: "revenue-critical path entering cascade" },
-  { at: 318, level: "INFO", message: "connection slope has turned negative" },
-  { at: 398, level: "INFO", message: "recovery gates awaiting commander action" },
+  { at: 26, level: "INJECT", message: "catalog-cache TTL cohort begins expiring" },
+  { at: 74, level: "INJECT", message: "origin fan-out pressure increasing" },
+  { at: 126, level: "INJECT", message: "checkout latency pressure increasing" },
+  { at: 165, level: "INJECT", message: "database contention pressure increasing" },
+  { at: 238, level: "INJECT", message: "cascade pressure applied to checkout path" },
+  { at: 318, level: "INFO", message: "cache recovery decision approaching" },
+  { at: 398, level: "INFO", message: "traffic restoration decision approaching" },
 ];
 
 export function CrisisLab() {
@@ -119,7 +121,7 @@ export function CrisisLab() {
   const [elapsed, setElapsed] = useState(0);
   const [modifiers, setModifiers] = useState<LabSimulationModifiers>(LAB_INITIAL_MODIFIERS);
   const [records, setRecords] = useState<LabDecisionRecord[]>([]);
-  const [history, setHistory] = useState<LabTelemetryPoint[]>([
+  const [history, setHistory] = useState<LabTelemetryPoint[]>(() => [
     computeLabSnapshot(0, LAB_INITIAL_MODIFIERS).metrics,
   ]);
   const [totalRevenueLost, setTotalRevenueLost] = useState(0);
@@ -133,6 +135,7 @@ export function CrisisLab() {
   const modifiersRef = useRef<LabSimulationModifiers>(LAB_INITIAL_MODIFIERS);
   const lossRef = useRef(0);
   const historyTickRef = useRef(-1);
+  const chosenGateIdsRef = useRef(new Set<string>());
 
   const computedSnapshot = useMemo(() => computeLabSnapshot(elapsed, modifiers), [elapsed, modifiers]);
   const snapshot = useMemo(
@@ -153,6 +156,7 @@ export function CrisisLab() {
     modifiersRef.current = LAB_INITIAL_MODIFIERS;
     lossRef.current = 0;
     historyTickRef.current = -1;
+    chosenGateIdsRef.current.clear();
     setElapsed(0);
     setModifiers(LAB_INITIAL_MODIFIERS);
     setRecords([]);
@@ -172,21 +176,24 @@ export function CrisisLab() {
 
   const chooseDecision = useCallback(
     (choice: LabDecisionChoice) => {
-      if (!activeDecision) return;
-      const nextModifiers = applyLabChoice(modifiersRef.current, choice);
+      if (!activeDecision || chosenGateIdsRef.current.has(activeDecision.id)) return;
+      const canonicalChoice = activeDecision.choices.find((candidate) => candidate.id === choice.id);
+      if (!canonicalChoice) return;
+      chosenGateIdsRef.current.add(activeDecision.id);
+      const nextModifiers = applyLabChoice(modifiersRef.current, canonicalChoice);
       modifiersRef.current = nextModifiers;
       setModifiers(nextModifiers);
       setRecords((current) => [
         ...current,
         {
           decisionId: activeDecision.id,
-          choiceId: choice.id,
+          choiceId: canonicalChoice.id,
           title: activeDecision.title,
-          choiceLabel: choice.label,
-          command: choice.command,
-          verdict: choice.verdict,
-          scoreDelta: choice.scoreDelta,
-          rationale: choice.rationale,
+          choiceLabel: canonicalChoice.label,
+          command: canonicalChoice.command,
+          verdict: canonicalChoice.verdict,
+          scoreDelta: canonicalChoice.scoreDelta,
+          rationale: canonicalChoice.rationale,
           chosenAt: Math.round(elapsedRef.current),
         },
       ]);
@@ -202,7 +209,8 @@ export function CrisisLab() {
       const realDelta = Math.min(0.5, (now - lastFrame) / 1_000);
       lastFrame = now;
       const current = elapsedRef.current;
-      const next = Math.min(LAB_TOTAL_SECONDS, current + realDelta * speed);
+      const nextGate = LAB_DECISIONS.find((decision) => !chosenGateIdsRef.current.has(decision.id));
+      const next = Math.min(LAB_TOTAL_SECONDS, nextGate?.triggerAt ?? LAB_TOTAL_SECONDS, current + realDelta * speed);
       const midpoint = current + (next - current) / 2;
       lossRef.current += computeLabSnapshot(midpoint, modifiersRef.current).revenueLossRate * (next - current);
       elapsedRef.current = next;
@@ -237,7 +245,7 @@ export function CrisisLab() {
       if (activeDecision && ["1", "2", "3"].includes(event.key)) {
         event.preventDefault();
         const choice = activeDecision.choices[Number(event.key) - 1];
-        if (choice) chooseDecision(choice);
+        if (choice && !event.repeat) chooseDecision(choice);
         return;
       }
       if (event.code === "Space" && !activeDecision) {
@@ -396,7 +404,7 @@ export function CrisisLab() {
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border px-1 pt-4 font-mono text-[8px] text-muted">
         <span className="flex items-center gap-1.5"><ScanSearch aria-hidden="true" className="size-3" />Deterministic synthetic scenario</span>
         <span className="flex items-center gap-1.5"><Terminal aria-hidden="true" className="size-3" />Space pause · 1–3 execute</span>
-        <span className="ms-auto text-primary">THREADLINE CRISIS LAB / v1.0</span>
+        <span className="ms-auto text-primary">THREADLINE CRISIS LAB / RUBRIC 047.2</span>
       </div>
 
       {activeDecision && <DecisionDialog decision={activeDecision} onChoose={chooseDecision} />}
@@ -409,7 +417,7 @@ function LabBriefing({ onBegin }: { onBegin: () => void }) {
     <div className="mx-auto max-w-[1540px] px-4 py-6 sm:px-6 sm:py-8">
       <PageHeader
         eyebrow="Crisis Lab · Scenario 047"
-        title="The release is a decoy. The system is already failing."
+        title="The alert is a symptom. Find the system behind it."
         description="Step into an eight-minute incident, read the evidence under pressure, and make six production decisions. Every choice changes the same deterministic system model."
         actions={<StatusPill tone="danger" dot>Advanced drill</StatusPill>}
       />
@@ -429,7 +437,7 @@ function LabBriefing({ onBegin }: { onBegin: () => void }) {
               Cache stampede.<br /><span className="text-muted">Database redline.</span>
             </h2>
             <p className="mt-6 max-w-2xl text-sm leading-7 text-muted">
-              Release 24.7.13 completed four minutes before the first alert. It looks guilty. The deploy touched no cache code, and 38 hot keys expired in the same cohort. Correlation is not causation—and every second now costs revenue.
+              Release 24.7.13 completed four minutes before the first alert. Checkout latency is climbing and database sessions are accumulating. You have six decision gates to diagnose the pressure, protect customers, and restore traffic safely.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button type="button" onClick={onBegin} className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-danger px-5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">
@@ -439,7 +447,7 @@ function LabBriefing({ onBegin }: { onBegin: () => void }) {
                 Review a resolved incident <GitBranch aria-hidden="true" className="size-4" />
               </Link>
             </div>
-            <p className="mt-4 font-mono text-[8px] text-muted">Keyboard enabled · simulation runs at 24× by default · no external services</p>
+            <p className="mt-4 font-mono text-[8px] text-muted">Keyboard enabled · simulation runs at 24× by default · decisions pause the clock</p>
           </div>
         </article>
 
@@ -464,9 +472,9 @@ function LabBriefing({ onBegin }: { onBegin: () => void }) {
           </article>
 
           <article className="panel p-5">
-            <p className="eyebrow">Hidden causal chain</p>
+            <p className="eyebrow">Your debrief includes</p>
             <div className="mt-5 space-y-2">
-              {["Synchronized TTL expiry", "Origin request stampede", "DB pool exhaustion", "Checkout cascade"].map((item, index) => (
+              {["Replay against no intervention", "Evidence for each competency", "Transparent scoring rubric", "Your next practice exercise"].map((item, index) => (
                 <div key={item} className="flex items-center gap-3">
                   <span className={cn("grid size-6 place-items-center rounded-full border font-mono text-[8px]", index === 3 ? "border-danger/30 bg-danger/[0.06] text-danger" : "border-border bg-panel-soft text-muted")}>{index + 1}</span>
                   <span className="text-[10px]">{item}</span>
@@ -616,7 +624,7 @@ function ServiceInspector({ service }: { service: LabServiceNode }) {
     <section className="panel overflow-hidden">
       <PanelHeading icon={Gauge} title="Service inspector" detail={service.code} />
       <div className="p-5">
-        <div className="flex items-start justify-between gap-3"><div><p className="text-sm font-medium">{service.label}</p><p className="mt-1 font-mono text-[8px] text-muted">production · us-east-1</p></div><StatusPill tone={STATUS_TONE[service.status]} dot>{service.status}</StatusPill></div>
+        <div className="flex items-start justify-between gap-3"><div><p className="text-sm font-medium">{service.label}</p><p className="mt-1 font-mono text-[8px] text-muted">simulation · us-east-1</p></div><StatusPill tone={STATUS_TONE[service.status]} dot>{service.status}</StatusPill></div>
         <div className="mt-5 grid grid-cols-2 gap-2">
           <div className="rounded-md border border-border bg-panel-soft p-3"><p className="font-mono text-[7px] uppercase text-muted">{service.metricLabel}</p><p className={cn("mt-2 font-mono text-sm", STATUS_TEXT[service.status])}>{service.metricValue}</p></div>
           <div className="rounded-md border border-border bg-panel-soft p-3"><p className="font-mono text-[7px] uppercase text-muted">Pressure</p><p className="mt-2 font-mono text-sm">{service.load}%</p></div>
@@ -696,8 +704,9 @@ function DecisionDialog({ decision, onChoose }: { decision: LabIncidentDecision;
 }
 
 function LabPostmortem({ result, records, onRestart, onDownload }: { result: LabIncidentResult; records: LabDecisionRecord[]; onRestart: () => void; onDownload: () => void }) {
+  const canonicalRecords = canonicalizeLabRecords(records);
   const ending = {
-    sovereign: { eyebrow: "Sovereign recovery", title: "You broke the cascade—and the pattern behind it.", description: "Causal diagnosis, bounded load, progressive warming, and SLO-gated restoration returned the system without a second wave.", tone: "success" as const },
+    sovereign: { eyebrow: result.recovered ? "Recovery objectives met" : "Reference strategy executed", title: result.recovered ? "You broke the cascade—and the pattern behind it." : "The cascade is controlled. Keep the recovery open.", description: result.recovered ? "Causal diagnosis, bounded load, progressive warming, and guarded restoration met the modeled recovery objectives." : `Your sequence relieved dependency pressure and sustained the traffic guard. Modeled errors remain at ${result.comparison.run.errorRate}%, above the 1% review objective.`, tone: "success" as const },
     contained: { eyebrow: "Incident contained", title: "The platform survived. The recovery is incomplete.", description: "You preserved the critical path, but one or more decisions traded full recovery for safety, time, or customer experience.", tone: "warning" as const },
     cascade: { eyebrow: "System cascade", title: "The visible symptom won the response window.", description: "The intervention amplified pressure or restored traffic before the underlying cache and database dynamics were safe.", tone: "danger" as const },
   }[result.ending];
@@ -717,16 +726,19 @@ function LabPostmortem({ result, records, onRestart, onDownload }: { result: Lab
       </section>
 
       <section aria-label="Simulation results" className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <ResultMetric icon={Clock3} label="Modeled MTTR" value={formatLabTime(result.mttrSeconds)} detail="from first signal" />
-        <ResultMetric icon={BrainCircuit} label="Decision accuracy" value={`${result.accuracy}%`} detail={`${records.filter((record) => record.verdict === "optimal").length} optimal commands`} />
+        <ResultMetric icon={Clock3} label="Traffic guard met" value={result.trafficGuardSeconds !== null ? formatLabTime(result.trafficGuardSeconds) : "Not reached"} detail="modeled · after first signal" />
+        <ResultMetric icon={BrainCircuit} label="Reference match" value={`${result.accuracy}%`} detail={`${result.assessment.referenceMatches} / ${result.assessment.total} reference choices`} />
         <ResultMetric icon={UsersRound} label="Peak affected" value={result.peakAffectedUsers.toLocaleString("en-US")} detail="modeled users" />
         <ResultMetric icon={ShieldCheck} label="Revenue protected" value={`$${result.revenueProtected.toLocaleString("en-US")}`} detail={`$${result.revenueLost.toLocaleString("en-US")} lost`} />
       </section>
 
+      <LabOutcomeReview result={result} />
+      <LabLearningReview assessment={result.assessment} />
+
       <section className="panel mt-4 overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><p className="text-xs font-medium">Command timeline</p><p className="mt-1 font-mono text-[8px] text-muted">Canonical rationale · tamper-resistant scoring</p></div><StatusPill tone="signal">6 decision gates</StatusPill></div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4"><div><p className="text-xs font-medium">Command timeline</p><p className="mt-1 font-mono text-[8px] text-muted">Scenario rationale · original choice points</p></div><StatusPill tone="signal">{canonicalRecords.length} decision gates</StatusPill></div>
         <div className="divide-y divide-border">
-          {records.map((record, index) => (
+          {canonicalRecords.map((record, index) => (
             <article key={record.decisionId} className="grid gap-3 px-4 py-5 sm:px-5 lg:grid-cols-[70px_minmax(180px,.65fr)_minmax(240px,1fr)_110px] lg:items-start">
               <span className="font-mono text-[8px] text-muted">T+{formatLabTime(record.chosenAt)}</span>
               <div><span className="font-mono text-[8px] text-primary">{String(index + 1).padStart(2, "0")}</span><h3 className="mt-1 text-[11px] font-medium">{record.choiceLabel}</h3><code className="mt-2 block break-all font-mono text-[7px] leading-4 text-signal">$ {record.command}</code></div>
@@ -739,7 +751,7 @@ function LabPostmortem({ result, records, onRestart, onDownload }: { result: Lab
 
       <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-panel-soft p-5 sm:flex-row sm:items-center">
         <span className="grid size-9 place-items-center rounded-md border border-primary/15 bg-primary/[0.055] text-primary"><Siren aria-hidden="true" className="size-4" /></span>
-        <div><p className="text-[11px] font-medium">Move from training twin to evidence-backed operations.</p><p className="mt-1 text-[9px] text-muted">Inspect THREADLINE&apos;s resolved incident room and compare simulated judgment with a verified recovery.</p></div>
+        <div><p className="text-[11px] font-medium">Follow the evidence into an incident room.</p><p className="mt-1 text-[9px] text-muted">Explore THREADLINE&apos;s sample incident to review its evidence, response plan, and recovery checks.</p></div>
         <Link href="/incidents/inc-2471" className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-border px-3 text-[10px] text-muted hover:text-foreground sm:ms-auto">Open Incident Room<ArrowRight aria-hidden="true" className="size-3" /></Link>
       </div>
     </div>

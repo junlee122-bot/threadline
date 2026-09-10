@@ -319,7 +319,7 @@ export function ChangeIntelligence() {
           </div>
         </div>
 
-        <div className="hidden grid-cols-[minmax(260px,2fr)_minmax(150px,1fr)_90px_100px_44px] gap-4 border-b border-white/[0.07] px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/50 md:grid">
+        <div className="hidden grid-cols-[minmax(260px,2fr)_minmax(150px,1fr)_90px_100px_44px] gap-4 border-b border-white/[0.07] px-5 py-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-white/50 xl:grid">
           <span>Change</span><span>Repository</span><span>Risk</span><span>Status</span><span />
         </div>
 
@@ -329,7 +329,7 @@ export function ChangeIntelligence() {
               key={change.id}
               type="button"
               onClick={() => setSelectedId(change.id)}
-              className="group grid w-full gap-4 px-4 py-4 text-left transition hover:bg-white/[0.035] focus-visible:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#b7f34b]/60 md:grid-cols-[minmax(260px,2fr)_minmax(150px,1fr)_90px_100px_44px] md:items-center md:px-5"
+              className="group grid w-full gap-4 px-4 py-4 text-left transition hover:bg-white/[0.035] focus-visible:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#b7f34b]/60 xl:grid-cols-[minmax(260px,2fr)_minmax(150px,1fr)_90px_100px_44px] xl:items-center xl:px-5"
             >
               <div className="min-w-0">
                 <div className="mb-1.5 flex items-center gap-2">
@@ -347,15 +347,15 @@ export function ChangeIntelligence() {
                 <p className="truncate font-mono text-[11px] text-white/55">{change.repo}</p>
                 <p className="mt-1 truncate font-mono text-[9px] text-white/50">{change.branch}</p>
               </div>
-              <div className="flex items-center justify-between md:block">
-                <span className="text-[9px] uppercase tracking-[0.12em] text-white/50 md:hidden">Risk</span>
+              <div className="flex items-center justify-between xl:block">
+                <span className="text-[9px] uppercase tracking-[0.12em] text-white/50 xl:hidden">Risk</span>
                 <RiskBadge risk={change.risk} score={change.score} />
               </div>
-              <div className="flex items-center justify-between md:block">
-                <span className="text-[9px] uppercase tracking-[0.12em] text-white/50 md:hidden">Status</span>
+              <div className="flex items-center justify-between xl:block">
+                <span className="text-[9px] uppercase tracking-[0.12em] text-white/50 xl:hidden">Status</span>
                 <span className={`inline-flex rounded-full border px-2 py-1 text-[9px] font-medium ${statusTone[change.status]}`}>{change.status}</span>
               </div>
-              <span className="hidden size-8 place-items-center rounded-lg border border-white/10 text-white/25 transition group-hover:border-white/20 group-hover:bg-white/5 group-hover:text-white md:grid">
+              <span className="hidden size-8 place-items-center rounded-lg border border-white/10 text-white/25 transition group-hover:border-white/20 group-hover:bg-white/5 group-hover:text-white xl:grid">
                 <ChevronRight className="size-4" aria-hidden="true" />
               </span>
             </button>

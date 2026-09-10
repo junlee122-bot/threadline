@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   applyLabChoice,
+  assessLabDecisions,
   buildLabResult,
+  canonicalizeLabRecords,
   computeLabSnapshot,
   createLabReport,
   LAB_DECISIONS,
@@ -98,5 +100,90 @@ describe("Threadline Crisis Lab", () => {
     expect(report).toContain("FAULTLINE 047");
     expect(report).toContain("cache singleflight enable");
     expect(report).toContain("ROOT CAUSE");
+    expect(report).toContain("COMPETENCY REVIEW");
+    expect(report).toContain("SAME-SCENARIO COMPARISON");
+    expect(report).toContain("not a professional certification");
+  });
+
+  it("scores named competency gates independently of record order", () => {
+    const run = play("mixed");
+    const assessment = assessLabDecisions([...run.records].reverse());
+    expect(assessment).toEqual(assessLabDecisions(run.records));
+    expect(assessment.competencies.map((competency) => competency.id)).toEqual(["diagnosis", "containment", "recovery"]);
+    expect(assessment.competencies[0].score).toBe(50);
+    expect(assessment.competencies[1].decisions.map((decision) => decision.decisionId)).toEqual(["cache-stampede", "pool-exhaustion", "blast-radius"]);
+    expect(assessment.competencies[1].decisions[0].score).toBe(45.5);
+    expect(assessment.practice).toHaveLength(6);
+    expect(assessment.practice[0].recommendedCommand).toContain("singleflight");
+  });
+
+  it("rejects unknown IDs and gives no assessment credit for unattempted gates", () => {
+    const unknown = { ...play("optimal").records[0], decisionId: "unknown", choiceId: "unknown" };
+    const mismatched = { ...play("optimal").records[0], choiceId: "single-flight" };
+    const assessment = assessLabDecisions([unknown, mismatched]);
+    expect(assessment.completed).toBe(0);
+    expect(assessment.decisionQuality).toBe(0);
+    expect(assessment.referenceMatches).toBe(0);
+    expect(assessment.competencies.every((competency) => competency.score === 0 && competency.completed === 0)).toBe(true);
+    expect(assessment.practice.every((practice) => practice.score === null && practice.selectedLabel === null)).toBe(true);
+    const partial = assessLabDecisions(play("optimal").records.slice(0, 1));
+    expect(partial.decisionQuality).toBe(16.7);
+    expect(partial.competencies[2].completed).toBe(0);
+    expect(partial.practice).toHaveLength(5);
+  });
+
+  it("uses the first valid choice once when duplicate or conflicting gate records arrive", () => {
+    const dangerous = play("dangerous").records;
+    const optimal = play("optimal").records;
+    const duplicates = [...dangerous, ...optimal, ...optimal];
+    expect(canonicalizeLabRecords(duplicates)).toEqual(dangerous);
+    expect(assessLabDecisions(duplicates)).toEqual(assessLabDecisions(dangerous));
+    const snapshot = computeLabSnapshot(LAB_TOTAL_SECONDS, LAB_INITIAL_MODIFIERS);
+    expect(buildLabResult(snapshot, duplicates)).toEqual(buildLabResult(snapshot, dangerous));
+  });
+
+  it("rebuilds scores, consequences, and report display from canonical choices", () => {
+    const run = play("dangerous");
+    const forged = run.records.map((record) => ({ ...record, verdict: "optimal" as const, scoreDelta: 1_000_000, command: "forged command", choiceLabel: "forged label", rationale: "forged rationale", title: "forged title" }));
+    const snapshot = computeLabSnapshot(LAB_TOTAL_SECONDS, run.modifiers);
+    const result = buildLabResult({ ...snapshot, health: 100, affectedUsers: 0, totalRevenueLost: 0 }, forged);
+    expect(result).toEqual(buildLabResult(snapshot, run.records));
+    expect(result.assessment.referenceMatches).toBe(0);
+    expect(result.assessment.competencies.every((competency) => competency.score === 0)).toBe(true);
+    expect(createLabReport(result, forged)).not.toContain("forged");
+    expect(createLabReport(result, forged)).toContain("deploy rollback release-24.7.13");
+  });
+
+  it("replays intervention timing and compares the same synthetic incident", () => {
+    const run = play("optimal");
+    const snapshot = computeLabSnapshot(LAB_TOTAL_SECONDS, run.modifiers);
+    const early = buildLabResult(snapshot, run.records);
+    const delayed = buildLabResult(snapshot, run.records.map((record) => ({ ...record, chosenAt: LAB_TOTAL_SECONDS })));
+    const baseline = buildLabResult(snapshot, []);
+    expect(early.revenueLost).toBeLessThan(delayed.revenueLost);
+    expect(delayed.revenueLost).toBe(baseline.revenueLost);
+    expect(delayed.recovered).toBe(false);
+    expect(delayed.ending).toBe("contained");
+    expect(early.trafficGuardMet).toBe(true);
+    expect(early.trafficGuardSeconds).toBe(395);
+    expect(early.errorObjectiveMet).toBe(false);
+    expect(early.recovered).toBe(false);
+    expect(early.comparison.run.errorRate).toBeGreaterThan(1);
+    expect(early.peakAffectedUsers).toBeLessThan(early.comparison.baseline.peakAffectedUsers);
+    expect(early.revenueProtected).toBe(early.comparison.baseline.revenueLost - early.comparison.run.revenueLost);
+    expect(early.comparison.timeline).toHaveLength(49);
+    expect(early.comparison.timeline[0]).toEqual({ elapsed: 0, baselineHealth: 100, runHealth: 100 });
+  });
+
+  it("clamps invalid and non-causal times without applying future choices to partial runs", () => {
+    const records = play("optimal").records.map((record, index) => ({ ...record, chosenAt: index === 0 ? Number.NaN : -100 }));
+    expect(canonicalizeLabRecords(records).map((record) => record.chosenAt)).toEqual(LAB_DECISIONS.map((decision) => decision.triggerAt));
+    const result = buildLabResult(computeLabSnapshot(100, LAB_INITIAL_MODIFIERS), records);
+    expect(result.assessment.completed).toBe(1);
+    expect(result.recovered).toBe(false);
+    expect(result.ending).not.toBe("sovereign");
+    const fractional = buildLabResult(computeLabSnapshot(LAB_TOTAL_SECONDS, LAB_INITIAL_MODIFIERS), play("optimal").records.map((record) => ({ ...record, chosenAt: record.chosenAt + 0.5 })));
+    expect(fractional.comparison.timeline).toHaveLength(49);
+    expect(Number.isFinite(fractional.revenueLost)).toBe(true);
   });
 });

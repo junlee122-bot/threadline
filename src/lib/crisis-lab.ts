@@ -1,9 +1,12 @@
 import type {
+  LabAssessment,
+  LabCompetencyId,
   LabDecisionChoice,
   LabDecisionEffects,
   LabDecisionRecord,
   LabIncidentDecision,
   LabIncidentResult,
+  LabOutcomeMetrics,
   LabServiceId,
   LabServiceLink,
   LabServiceNode,
@@ -501,56 +504,236 @@ export function applyLabChoice(inputModifiers: LabSimulationModifiers, choice: L
   };
 }
 
-const POSSIBLE_SCORE_MIN = LAB_DECISIONS.reduce((total, decision) => total + Math.min(...decision.choices.map((choice) => choice.scoreDelta)), 0);
-const POSSIBLE_SCORE_MAX = LAB_DECISIONS.reduce((total, decision) => total + Math.max(...decision.choices.map((choice) => choice.scoreDelta)), 0);
+export const LAB_RUBRIC_VERSION = "047.2";
+export const LAB_RECOVERY_HOLD_SECONDS = 30;
 
-export function buildLabResult(snapshot: LabSimulationSnapshot, records: LabDecisionRecord[]): LabIncidentResult {
-  const canonicalChoices = new Map<string, { scoreDelta: number; verdict: LabDecisionChoice["verdict"] }>();
+const COMPETENCY_DOMAINS: Array<{ id: LabCompetencyId; label: string; description: string; decisionIds: string[] }> = [
+  { id: "diagnosis", label: "Causal diagnosis", description: "Distinguish correlation from the dependency causing harm.", decisionIds: ["first-signal"] },
+  { id: "containment", label: "Load containment", description: "Reduce origin pressure while preserving the transaction path.", decisionIds: ["cache-stampede", "pool-exhaustion", "blast-radius"] },
+  { id: "recovery", label: "Recovery discipline", description: "Prevent a second wave and restore traffic behind measurable gates.", decisionIds: ["recovery-window", "restore-service"] },
+];
+
+const PRACTICE_EXERCISES: Record<string, string> = {
+  "first-signal": "Write a falsifiable deploy hypothesis, then identify the cache-to-database signal that would reject it before changing capacity.",
+  "cache-stampede": "Draw the path for 100 requests to one expired key. Compare origin calls with and without a single in-flight rebuild.",
+  "pool-exhaustion": "Set an admission limit below the pool ceiling. Explain why lock waits can increase while CPU still has headroom.",
+  "blast-radius": "List the reads a minimal checkout requires. Remove optional fan-out and state which customer journeys remain available.",
+  "recovery-window": "Define the first canary cohort, TTL jitter, and a stop condition for a cache warm-up before raising its rate.",
+  "restore-service": "Write a staged traffic plan with a p95 and pool guard. State exactly what stops or reverses the next step.",
+};
+
+/** Accept the first valid choice for each gate; display fields are never trusted. */
+export function canonicalizeLabRecords(records: LabDecisionRecord[]): LabDecisionRecord[] {
+  const accepted = new Map<string, LabDecisionRecord>();
   for (const record of records) {
     const decision = LAB_DECISIONS.find((candidate) => candidate.id === record.decisionId);
     const choice = decision?.choices.find((candidate) => candidate.id === record.choiceId);
-    if (decision && choice) canonicalChoices.set(decision.id, { scoreDelta: choice.scoreDelta, verdict: choice.verdict });
+    if (!decision || !choice || accepted.has(decision.id)) continue;
+    accepted.set(decision.id, {
+      decisionId: decision.id,
+      choiceId: choice.id,
+      title: decision.title,
+      choiceLabel: choice.label,
+      command: choice.command,
+      verdict: choice.verdict,
+      scoreDelta: choice.scoreDelta,
+      rationale: choice.rationale,
+      chosenAt: clamp(finite(record.chosenAt, decision.triggerAt), decision.triggerAt, LAB_TOTAL_SECONDS),
+    });
   }
-  const canonical = [...canonicalChoices.values()];
-  const rawDecisionScore = canonical.reduce((total, choice) => total + choice.scoreDelta, 0);
-  const decisionQuality = clamp(((rawDecisionScore - POSSIBLE_SCORE_MIN) / (POSSIBLE_SCORE_MAX - POSSIBLE_SCORE_MIN)) * 100, 0, 100);
-  const accuracy = Math.round(
-    (canonical.reduce((total, choice) => total + (choice.verdict === "optimal" ? 1 : choice.verdict === "mixed" ? 0.4 : 0), 0) / LAB_DECISIONS.length) * 100,
-  );
-  const finalHealth = Math.round(clamp(snapshot.health, 0, 100));
-  const score = Math.round(clamp(finalHealth * 0.5 + accuracy * 0.3 + decisionQuality * 0.2, 0, 100));
+  let previousTime = 0;
+  return LAB_DECISIONS.flatMap((decision) => {
+    const record = accepted.get(decision.id);
+    if (!record) return [];
+    previousTime = Math.max(previousTime, record.chosenAt);
+    return [{ ...record, chosenAt: previousTime }];
+  });
+}
+
+export function assessLabDecisions(records: LabDecisionRecord[]): LabAssessment {
+  const canonical = canonicalizeLabRecords(records);
+  const byId = new Map(canonical.map((record) => [record.decisionId, record]));
+  const competencies = COMPETENCY_DOMAINS.map((domain) => {
+    const decisions = domain.decisionIds.map((id) => {
+      const decision = LAB_DECISIONS.find((candidate) => candidate.id === id)!;
+      const selected = byId.get(id);
+      const best = [...decision.choices].sort((a, b) => b.scoreDelta - a.scoreDelta)[0];
+      const minimum = Math.min(...decision.choices.map((choice) => choice.scoreDelta));
+      const score = selected ? roundTo(((selected.scoreDelta - minimum) / (best.scoreDelta - minimum)) * 100, 1) : null;
+      return {
+        decisionId: id,
+        title: decision.title,
+        selectedLabel: selected?.choiceLabel ?? null,
+        recommendedLabel: best.label,
+        recommendedCommand: best.command,
+        rationale: selected?.rationale ?? "This gate was not attempted; no decision evidence is available.",
+        exercise: PRACTICE_EXERCISES[id],
+        score,
+      };
+    });
+    return {
+      id: domain.id,
+      label: domain.label,
+      description: domain.description,
+      score: Math.round(decisions.reduce((total, decision) => total + (decision.score ?? 0), 0) / decisions.length),
+      completed: decisions.filter((decision) => decision.score !== null).length,
+      total: decisions.length,
+      decisions,
+    };
+  });
+  const decisions = competencies.flatMap((competency) => competency.decisions);
+  return {
+    rubricVersion: LAB_RUBRIC_VERSION,
+    completed: canonical.length,
+    total: LAB_DECISIONS.length,
+    referenceMatches: canonical.filter((record) => record.verdict === "optimal").length,
+    decisionQuality: roundTo(decisions.reduce((sum, decision) => sum + (decision.score ?? 0), 0) / LAB_DECISIONS.length, 1),
+    competencies,
+    practice: decisions.filter((decision) => decision.score !== 100).sort((a, b) => (a.score ?? -1) - (b.score ?? -1)),
+  };
+}
+
+interface ReplayedRun {
+  metrics: LabOutcomeMetrics;
+  recoveryStartedAt: number | null;
+  timeline: Array<{ elapsed: number; health: number }>;
+}
+
+/** Integrate the same model at one-second intervals, applying choices at their recorded gates. */
+function replayLabRun(records: LabDecisionRecord[], elapsed: number): ReplayedRun {
+  const end = clamp(elapsed, 0, LAB_TOTAL_SECONDS);
+  let modifiers = { ...LAB_INITIAL_MODIFIERS };
+  let cursor = 0;
+  let decisionIndex = 0;
+  let revenueLost = 0;
+  let peakAffectedUsers = 0;
+  let stableSince: number | null = null;
+  const timeline: ReplayedRun["timeline"] = [];
+  while (cursor <= end) {
+    while (decisionIndex < records.length && records[decisionIndex].chosenAt <= cursor) {
+      const record = records[decisionIndex];
+      const decision = LAB_DECISIONS.find((candidate) => candidate.id === record.decisionId)!;
+      modifiers = applyLabChoice(modifiers, decision.choices.find((choice) => choice.id === record.choiceId)!);
+      decisionIndex += 1;
+    }
+    const frame = calculateFrame(cursor, modifiers);
+    peakAffectedUsers = Math.max(peakAffectedUsers, frame.affectedUsers);
+    const meetsRecoveryGate = frame.latency <= 800 && frame.dbConnections <= 1_260 && frame.cacheHitRate >= 90;
+    if (cursor >= LAB_DECISIONS[0].triggerAt && meetsRecoveryGate) stableSince ??= cursor;
+    else stableSince = null;
+    if (cursor % 10 === 0 || cursor === end) timeline.push({ elapsed: cursor, health: Math.round(frame.health) });
+    if (cursor === end) break;
+    const nextDecisionAt = records[decisionIndex]?.chosenAt ?? end;
+    const next = Math.min(Math.floor(cursor) + 1, nextDecisionAt, end);
+    revenueLost += calculateFrame((cursor + next) / 2, modifiers).revenueLossRate * (next - cursor);
+    cursor = next;
+  }
+  const final = calculateFrame(end, modifiers);
+  return {
+    metrics: {
+      finalHealth: Math.round(final.health),
+      peakAffectedUsers: Math.round(peakAffectedUsers),
+      revenueLost: Math.round(revenueLost),
+      latency: Math.round(final.latency),
+      errorRate: roundTo(final.errorRate, 1),
+      dbConnections: Math.round(final.dbConnections),
+      cacheHitRate: roundTo(final.cacheHitRate, 1),
+    },
+    recoveryStartedAt: stableSince !== null && end - stableSince >= LAB_RECOVERY_HOLD_SECONDS ? stableSince : null,
+    timeline,
+  };
+}
+
+export function buildLabResult(snapshot: LabSimulationSnapshot, records: LabDecisionRecord[]): LabIncidentResult {
+  const elapsed = clamp(snapshot.elapsed, 0, LAB_TOTAL_SECONDS);
+  const canonical = canonicalizeLabRecords(records).filter((record) => record.chosenAt <= elapsed);
+  const assessment = assessLabDecisions(canonical);
+  const run = replayLabRun(canonical, elapsed);
+  const baseline = replayLabRun([], elapsed);
+  const accuracy = Math.round((assessment.referenceMatches / LAB_DECISIONS.length) * 100);
+  const finalHealth = run.metrics.finalHealth;
+  const score = Math.round(clamp(finalHealth * 0.5 + accuracy * 0.3 + assessment.decisionQuality * 0.2, 0, 100));
+  const complete = assessment.completed === assessment.total;
+  const trafficGuardMet = complete && run.recoveryStartedAt !== null;
+  const trafficGuardSeconds = trafficGuardMet ? Math.round(run.recoveryStartedAt! + LAB_RECOVERY_HOLD_SECONDS - LAB_DECISIONS[0].triggerAt) : null;
+  const errorObjectiveMet = run.metrics.errorRate <= 1;
+  const recovered = trafficGuardMet && errorObjectiveMet;
   const ending: LabIncidentResult["ending"] =
-    score >= 82 && finalHealth >= 75 && accuracy >= 67 ? "sovereign" : score >= 40 && finalHealth >= 35 ? "contained" : "cascade";
+    trafficGuardMet && score >= 82 && finalHealth >= 75 && accuracy >= 67 ? "sovereign" : score >= 40 && finalHealth >= 35 ? "contained" : "cascade";
   const grade: LabIncidentResult["grade"] = score >= 90 ? "S" : score >= 78 ? "A" : score >= 64 ? "B" : score >= 48 ? "C" : "D";
-  const noInterventionLoss = computeLabSnapshot(LAB_TOTAL_SECONDS, LAB_INITIAL_MODIFIERS).totalRevenueLost;
-  const revenueLost = Math.max(0, Math.round(snapshot.totalRevenueLost));
   return {
     ending,
     grade,
     score,
-    mttrSeconds: ending === "cascade" ? LAB_TOTAL_SECONDS : Math.round(clamp(LAB_TOTAL_SECONDS - Math.max(0, score - 25) * 3.4, 180, LAB_TOTAL_SECONDS)),
-    peakAffectedUsers: Math.round(Math.max(Math.max(0, finite(snapshot.affectedUsers)), 12_000 + (100 - finalHealth) * 1_700)),
-    revenueProtected: Math.max(0, noInterventionLoss - revenueLost),
-    revenueLost,
+    mttrSeconds: recovered ? trafficGuardSeconds! : LAB_TOTAL_SECONDS,
+    peakAffectedUsers: run.metrics.peakAffectedUsers,
+    revenueProtected: Math.max(0, baseline.metrics.revenueLost - run.metrics.revenueLost),
+    revenueLost: run.metrics.revenueLost,
     finalHealth,
     accuracy,
+    recovered,
+    trafficGuardMet,
+    trafficGuardSeconds,
+    errorObjectiveMet,
+    assessment,
+    comparison: {
+      baseline: baseline.metrics,
+      run: run.metrics,
+      timeline: baseline.timeline.map((point) => ({
+        elapsed: point.elapsed,
+        baselineHealth: point.health,
+        runHealth: run.timeline.find((candidate) => candidate.elapsed === point.elapsed)?.health ?? run.metrics.finalHealth,
+      })),
+    },
   };
 }
 
 export function createLabReport(result: LabIncidentResult, records: LabDecisionRecord[]): string {
+  const canonical = canonicalizeLabRecords(records);
+  const assessment = assessLabDecisions(canonical);
   return [
     "# THREADLINE CRISIS LAB / AFTER-ACTION REPORT",
     "",
     `Scenario: FAULTLINE 047 — Cache stampede`,
     `Ending: ${result.ending.toUpperCase()}`,
     `Grade: ${result.grade} (${result.score}/100)`,
-    `MTTR: ${formatLabTime(result.mttrSeconds)}`,
-    `Decision accuracy: ${result.accuracy}%`,
+    `Full recovery: ${result.recovered ? formatLabTime(result.mttrSeconds) + " after first signal" : "Not reached within the scenario"}`,
+    `Traffic guard confirmation: ${result.trafficGuardSeconds !== null ? formatLabTime(result.trafficGuardSeconds) + " after first signal" : "Not sustained"}`,
+    `Residual errors: ${result.comparison.run.errorRate}% (${result.errorObjectiveMet ? "within" : "above"} the 1% review objective)`,
+    `Reference choice match: ${result.accuracy}%`,
     `Revenue protected: $${result.revenueProtected.toLocaleString("en-US")}`,
     `Revenue lost: $${result.revenueLost.toLocaleString("en-US")}`,
     "",
+    "## SCORING RUBRIC",
+    `Scenario rubric version: ${assessment.rubricVersion}. Coverage: ${assessment.completed}/${assessment.total} gates.`,
+    "Gate quality = 100 × (selected points − minimum points) / (maximum points − minimum points). Each gate has equal weight; unattempted gates contribute zero and remain marked unattempted.",
+    "Command score = 50% final modeled health + 30% exact reference-choice match + 20% mean gate quality. This is an educational scenario rubric, not a professional certification or peer benchmark.",
+    "The traffic guard requires p95 ≤ 800ms, pool ≤ 1,260 connections, and cache hits ≥ 90% for at least the final 30 modeled seconds. Confirmation time runs from the first signal to completion of this hold. Residual errors are assessed separately against 1%; a passing traffic guard or S grade does not imply full recovery. The model is replayed at one-second intervals and does not measure wall-clock decision speed.",
+    "",
+    "## COMPETENCY REVIEW",
+    ...assessment.competencies.flatMap((competency) => [
+      `### ${competency.label}: ${competency.score}/100 (${competency.completed}/${competency.total} attempted)`,
+      competency.description,
+      ...competency.decisions.map((decision) => `- ${decision.title}: ${decision.score === null ? "Unattempted" : decision.score + "/100"} — ${decision.selectedLabel ?? "No choice recorded"}`),
+    ]),
+    "",
+    "## NEXT PRACTICE",
+    ...(assessment.practice.length ? assessment.practice.flatMap((practice) => [
+      `### ${practice.title}`,
+      `Try: ${practice.recommendedLabel}.`,
+      practice.exercise,
+      `Reference command: \`${practice.recommendedCommand}\``,
+    ]) : ["All six reference choices matched. Repeat the exercise and state a falsifying signal and rollback guard before every intervention."]),
+    "",
+    "## SAME-SCENARIO COMPARISON",
+    "No-intervention baseline and this run use identical demand and incident pressure. Values are modeled, not actual customer or financial measurements.",
+    `Revenue lost: baseline $${result.comparison.baseline.revenueLost.toLocaleString("en-US")} → run $${result.revenueLost.toLocaleString("en-US")}`,
+    `Peak affected: baseline ${result.comparison.baseline.peakAffectedUsers.toLocaleString("en-US")} → run ${result.peakAffectedUsers.toLocaleString("en-US")}`,
+    `Final health: baseline ${result.comparison.baseline.finalHealth}% → run ${result.finalHealth}%`,
+    `Final error rate: baseline ${result.comparison.baseline.errorRate}% → run ${result.comparison.run.errorRate}%`,
+    "",
     "## COMMAND TIMELINE",
-    ...records.flatMap((record) => [
+    ...canonical.flatMap((record) => [
       "",
       `### T+${formatLabTime(record.chosenAt)} / ${record.choiceLabel}`,
       `\`${record.command}\``,

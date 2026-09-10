@@ -34,6 +34,20 @@ All state meaning is repeated in copy and icons. Lines additionally use solid, d
 - A panel receives one subtle top highlight and one border.
 - Gradients are limited to ambient background light and data fills.
 - Grid and dot textures communicate system structure and recede below content.
+- Luminous borders and sheen are reserved for one decision-critical surface per region; they never decorate ordinary cards.
+- The global evidence bar uses motion only to communicate live ingestion, and remains secondary to route content.
+
+## Operational hierarchy
+
+Every high-stakes view should answer five questions in order:
+
+1. What customer outcome is changing?
+2. Which evidence supports that statement, and how fresh is it?
+3. Who owns the decision right now?
+4. What is constrained while the incident is active?
+5. Which measurable condition ends the response?
+
+Operational metadata uses compact monospace labels, while decisions and customer consequences stay in readable sans-serif text. A responder should not need to decode color or hover a control to find ownership, policy, or success criteria.
 
 ## Interaction rules
 
