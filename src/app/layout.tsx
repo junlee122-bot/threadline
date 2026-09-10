@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
+import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { isLocale } from "@/lib/locales/types";
 import { siteOrigin } from "@/lib/site";
 import "./globals.css";
 
@@ -55,14 +58,16 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const preferredLocale = (await cookies()).get("threadline_locale")?.value;
+  const locale = isLocale(preferredLocale) ? preferredLocale : "en";
   return (
     <html
-      lang="en"
+      lang={locale}
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
@@ -71,9 +76,9 @@ export default function RootLayout({
           href="#main-content"
           className="fixed start-4 top-3 z-[100] -translate-y-20 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-transform focus:translate-y-0"
         >
-          Skip to main content
+          {locale === "ko" ? "본문으로 건너뛰기" : "Skip to main content"}
         </a>
-        {children}
+        <LocaleProvider initialLocale={locale}>{children}</LocaleProvider>
         <ServiceWorkerRegister />
       </body>
     </html>

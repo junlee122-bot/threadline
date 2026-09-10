@@ -7,6 +7,7 @@ import { CausalGraph, type GraphEdge, type GraphNode } from "@/components/graph/
 import { EvidenceExplorer } from "@/components/evidence/evidence-explorer";
 import { Sparkline } from "@/components/ui/sparkline";
 import { StatusPill } from "@/components/ui/status-pill";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { getIncidentSnapshot, type IncidentSnapshot } from "@/lib/incident-replay";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,7 @@ const handoffItems = [
 ];
 
 export function CommandCenter() {
+  const { t } = useLocale();
   const [mode, setMode] = useState<SnapshotMode>("investigating");
   const [selectedId, setSelectedId] = useState("service");
   const [question, setQuestion] = useState<BriefQuestion>("cause");
@@ -96,12 +98,12 @@ export function CommandCenter() {
   return (
     <div className="mx-auto max-w-[1600px] space-y-5 px-4 py-6 sm:px-6 sm:py-8 lg:space-y-6">
       <header className="flex flex-col justify-between gap-5 xl:flex-row xl:items-end">
-        <div><p className="eyebrow flex items-center gap-2 text-primary"><Radar aria-hidden="true" className="size-3.5" />Command center / Commerce Core</p><h1 className="mt-3 text-[28px] font-medium leading-tight tracking-[-0.055em] sm:text-[36px]">Your system, in perspective.</h1><p className="mt-2 max-w-2xl text-xs leading-6 text-muted sm:text-sm">Follow the evidence from a risky release to a verified recovery.</p></div>
+        <div><p className="eyebrow flex items-center gap-2 text-primary"><Radar aria-hidden="true" className="size-3.5" />{t("Command center / Commerce Core")}</p><h1 className="mt-3 text-[28px] font-medium leading-tight tracking-[-0.055em] sm:text-[36px]">{t("Your system, in perspective.")}</h1><p className="mt-2 max-w-2xl text-xs leading-6 text-muted sm:text-sm">{t("Follow the evidence from a risky release to a verified recovery.")}</p></div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex rounded-xl border border-border bg-panel p-1" role="group" aria-label="Command snapshot">
-            {(["investigating", "verified"] as const).map((value) => <button key={value} type="button" aria-pressed={mode === value} onClick={() => { setMode(value); setNotice(""); }} className={cn("min-h-10 rounded-lg px-3 text-start transition-colors sm:px-4", mode === value ? "bg-panel-elevated shadow-sm" : "text-muted hover:text-foreground")}><span className="block text-[11px] font-medium">{value === "verified" ? "Recovery" : "Investigation"}</span><span className={cn("mt-0.5 block font-mono text-[8px]", mode === value ? "text-primary" : "text-muted")}>{value === "verified" ? "09:40" : "09:25"} UTC</span></button>)}
+          <div className="flex rounded-xl border border-border bg-panel p-1" role="group" aria-label={t("Command snapshot")}>
+            {(["investigating", "verified"] as const).map((value) => <button key={value} type="button" aria-pressed={mode === value} onClick={() => { setMode(value); setNotice(""); }} className={cn("min-h-10 rounded-lg px-3 text-start transition-colors sm:px-4", mode === value ? "bg-panel-elevated shadow-sm" : "text-muted hover:text-foreground")}><span className="block text-[11px] font-medium">{t(value === "verified" ? "Recovery" : "Investigation")}</span><span className={cn("mt-0.5 block font-mono text-[8px]", mode === value ? "text-primary" : "text-muted")}>{value === "verified" ? "09:40" : "09:25"} UTC</span></button>)}
           </div>
-          <button type="button" onClick={exportBrief} className="grid size-11 place-items-center rounded-xl border border-border bg-panel text-muted transition-colors hover:border-primary/30 hover:text-primary" aria-label="Export operations brief"><Download aria-hidden="true" className="size-4" /></button>
+          <button type="button" onClick={exportBrief} className="grid size-11 place-items-center rounded-xl border border-border bg-panel text-muted transition-colors hover:border-primary/30 hover:text-primary" aria-label={t("Export operations brief")}><Download aria-hidden="true" className="size-4" /></button>
         </div>
       </header>
 
@@ -109,23 +111,23 @@ export function CommandCenter() {
         <div className="relative grid xl:grid-cols-[minmax(0,1.4fr)_minmax(310px,.85fr)]">
           <article className="relative min-w-0 p-5 sm:p-7 lg:p-8">
             <div className="flex flex-wrap items-center gap-2.5"><span className={cn("grid size-8 place-items-center rounded-lg border", resolved ? "border-success/25 bg-success/10 text-success" : "border-danger/25 bg-danger/10 text-danger")}>{resolved ? <ShieldCheck aria-hidden="true" className="size-4" /> : <Siren aria-hidden="true" className="size-4" />}</span><span className="font-mono text-[10px] tracking-wide text-muted">INC-2471</span><StatusPill tone={resolved ? "success" : "warning"} dot>{snapshot.status}</StatusPill><span className="ms-auto font-mono text-[9px] text-muted">FROZEN SNAPSHOT</span></div>
-            <h2 id="operating-picture-title" className="mt-6 max-w-xl text-balance text-[25px] font-medium leading-[1.22] tracking-[-0.04em] sm:text-[32px]">{resolved ? <>Recovery is verified.<br /><span className="text-success">Keep the learning loop open.</span></> : <>One regression.<br /><span className="text-primary">A clear next decision.</span></>}</h2>
-            <p className="mt-4 max-w-xl text-xs leading-6 text-muted sm:text-sm">{resolved ? "Disabling instant-tax-v2 restored checkout latency. The five-minute verification window has passed; evidence reconciliation and follow-up ownership come next." : "Checkout latency and conversion moved after the tax-quote rollout. Trace evidence points to retry amplification. Review the reversible mitigation, then verify the customer outcome."}</p>
-            <div className="mt-6 flex flex-wrap gap-2"><Link href={incidentHref} className="inline-flex min-h-11 items-center justify-center gap-3 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-[0_6px_24px_rgba(184,246,106,.1)] transition hover:bg-[#cafa91]">{resolved ? "Review the recovery" : "Enter incident room"}<ArrowUpRight aria-hidden="true" className="size-4" /></Link><EvidenceExplorer /></div>
+            <h2 id="operating-picture-title" className="mt-6 max-w-xl text-balance text-[25px] font-medium leading-[1.22] tracking-[-0.04em] sm:text-[32px]">{resolved ? <>{t("Recovery is verified.")}<br /><span className="text-success">{t("Keep the learning loop open.")}</span></> : <>{t("One regression.")}<br /><span className="text-primary">{t("A clear next decision.")}</span></>}</h2>
+            <p className="mt-4 max-w-xl text-xs leading-6 text-muted sm:text-sm">{t(resolved ? "Disabling instant-tax-v2 restored checkout latency. The five-minute verification window has passed; evidence reconciliation and follow-up ownership come next." : "Checkout latency and conversion moved after the tax-quote rollout. Trace evidence points to retry amplification. Review the reversible mitigation, then verify the customer outcome.")}</p>
+            <div className="mt-6 flex flex-wrap gap-2"><Link href={incidentHref} className="inline-flex min-h-11 items-center justify-center gap-3 rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-[0_6px_24px_rgba(184,246,106,.1)] transition hover:bg-[#cafa91]">{t(resolved ? "Review the recovery" : "Enter incident room")}<ArrowUpRight aria-hidden="true" className="size-4" /></Link><EvidenceExplorer /></div>
             <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-border pt-4"><span className="flex items-center gap-2"><span className="grid size-6 place-items-center rounded-full border border-primary/20 bg-primary/10 font-mono text-[8px] text-primary">MC</span><span className="text-[11px]">Maya Chen<span className="ms-1.5 text-muted">commander</span></span></span><span className="flex items-center gap-1.5 font-mono text-[9px] text-muted"><Clock3 aria-hidden="true" className="size-3" />{snapshot.elapsedMinutes}m since declaration</span></div>
           </article>
           <aside className="relative flex min-w-0 flex-col justify-between border-t border-border bg-black/[0.12] p-5 sm:p-7 xl:border-s xl:border-t-0">
-            <div className="flex items-center justify-between"><p className="eyebrow">Checkout pulse</p><span className="font-mono text-[9px] text-muted">{frame.time} UTC</span></div>
+            <div className="flex items-center justify-between"><p className="eyebrow">{t("Checkout pulse")}</p><span className="font-mono text-[9px] text-muted">{frame.time} UTC</span></div>
             <div className="mt-5 flex items-end justify-between gap-3"><div><p className="text-[11px] text-muted">p95 latency</p><p className={cn("mt-1 font-mono text-5xl tracking-[-0.065em] tabular", resolved ? "text-success" : "text-foreground")}>{frame.latency.toFixed(2)}<span className="ms-1 text-xl text-muted">s</span></p></div><span className={cn("mb-1 rounded-md px-2 py-1 font-mono text-[9px]", resolved ? "bg-success/10 text-success" : "bg-danger/10 text-danger")}>{resolved ? "within recovery gate" : `+${snapshot.latencyDelta.toFixed(1)}% vs baseline`}</span></div>
             <div className="my-6"><Sparkline points={snapshot.history.map((item) => item.latency)} tone={resolved ? "success" : "warning"} label={`p95 latency through ${frame.time} UTC`} className="h-[104px]" /><div className="mt-2 flex justify-between font-mono text-[8px] text-muted"><span>09:08</span><span>680 ms baseline · {frame.time} UTC</span></div></div>
-            <div className="grid grid-cols-2 gap-4 border-t border-border pt-4"><div><p className="text-[10px] text-muted">Error rate</p><p className={cn("mt-1 font-mono text-xl tabular", resolved ? "text-success" : "text-danger")}>{frame.errors.toFixed(1)}%</p></div><div><p className="text-[10px] text-muted">Checkout conversion</p><p className="mt-1 font-mono text-xl tabular">{frame.conversion.toFixed(1)}%</p></div></div>
+            <div className="grid grid-cols-2 gap-4 border-t border-border pt-4"><div><p className="text-[10px] text-muted">{t("Error rate")}</p><p className={cn("mt-1 font-mono text-xl tabular", resolved ? "text-success" : "text-danger")}>{frame.errors.toFixed(1)}%</p></div><div><p className="text-[10px] text-muted">{t("Checkout conversion")}</p><p className="mt-1 font-mono text-xl tabular">{frame.conversion.toFixed(1)}%</p></div></div>
           </aside>
         </div>
         <div className="grid grid-cols-2 gap-px border-t border-border bg-border lg:grid-cols-4">
-          <OperatingMetric icon={Target} label="Customer impact" value={resolved ? "$0/hr" : `−$${frame.revenue.toFixed(1)}k/hr`} detail="Modeled estimate · not booked loss" tone={resolved ? "success" : "danger"} />
-          <OperatingMetric icon={FileSearch} label="Evidence coverage" value="7 records" detail="Code, rollout, traces & commerce" tone="signal" />
-          <OperatingMetric icon={ShieldCheck} label="Recovery contract" value="5 minutes" detail="p95 < 800 ms · errors < 1%" tone="primary" />
-          <OperatingMetric icon={LockKeyhole} label="Change control" value={resolved ? "Observation" : "Approval required"} detail={resolved ? "Validate before resuming rollouts" : "Operator signs off on mitigation"} tone="inference" />
+          <OperatingMetric icon={Target} label={t("Customer impact")} value={resolved ? "$0/hr" : `−$${frame.revenue.toFixed(1)}k/hr`} detail={t("Modeled estimate · not booked loss")} tone={resolved ? "success" : "danger"} />
+          <OperatingMetric icon={FileSearch} label={t("Evidence coverage")} value={t("7 records")} detail={t("Code, rollout, traces & commerce")} tone="signal" />
+          <OperatingMetric icon={ShieldCheck} label={t("Recovery contract")} value={t("5 minutes")} detail="p95 < 800 ms · errors < 1%" tone="primary" />
+          <OperatingMetric icon={LockKeyhole} label={t("Change control")} value={t(resolved ? "Observation" : "Approval required")} detail={t(resolved ? "Validate before resuming rollouts" : "Operator signs off on mitigation")} tone="inference" />
         </div>
       </section>
 

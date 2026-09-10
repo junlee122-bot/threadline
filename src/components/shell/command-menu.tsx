@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "@/components/i18n/locale-provider";
 import {
   Bot,
   ChartNoAxesCombined,
@@ -25,6 +26,7 @@ const commands = [
 
 export function CommandMenu() {
   const router = useRouter();
+  const { t } = useLocale();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -63,11 +65,12 @@ export function CommandMenu() {
 
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return commands;
-    return commands.filter((command) =>
+    const localizedCommands = commands.map((command) => ({ ...command, label: t(command.label), detail: t(command.detail) }));
+    if (!needle) return localizedCommands;
+    return localizedCommands.filter((command) =>
       `${command.label} ${command.detail} ${command.keywords}`.toLowerCase().includes(needle),
     );
-  }, [query]);
+  }, [query, t]);
 
   const navigate = (href: string) => {
     close();
@@ -80,10 +83,10 @@ export function CommandMenu() {
         type="button"
         onClick={open}
         className="group flex h-9 min-w-0 items-center gap-2 rounded-md border border-border bg-panel-soft px-3 text-xs text-muted transition-colors hover:border-border-strong hover:text-foreground sm:w-[260px]"
-        aria-label="Open command menu"
+        aria-label={t("Open command menu")}
       >
         <Search aria-hidden="true" className="size-3.5" />
-        <span className="hidden truncate sm:inline">Find a view or incident…</span>
+        <span className="hidden truncate sm:inline">{t("Find a view or incident…")}</span>
         <kbd className="ms-auto hidden rounded border border-border px-1.5 py-0.5 font-mono text-[9px] text-muted sm:inline">
           ⌘ K
         </kbd>
@@ -95,7 +98,7 @@ export function CommandMenu() {
         }}
         onClose={() => setQuery("")}
         className="m-auto w-[min(620px,calc(100%-2rem))] overflow-hidden rounded-xl border border-border-strong bg-[#0d1215] p-0 text-foreground shadow-[0_32px_120px_rgba(0,0,0,.65)] backdrop:bg-black/70 backdrop:backdrop-blur-sm"
-        aria-label="Command menu"
+        aria-label={t("Command menu")}
       >
         <div className="flex items-center gap-3 border-b border-border px-4">
           <Search aria-hidden="true" className="size-4 text-muted" />
@@ -119,8 +122,8 @@ export function CommandMenu() {
               }
             }}
             className="h-14 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
-            placeholder="Search commands: incident, map, reports…"
-            aria-label="Search commands"
+            placeholder={t("Search commands: incident, map, reports…")}
+            aria-label={t("Search commands")}
             role="combobox"
             aria-expanded="true"
             aria-controls="command-results"
@@ -135,8 +138,8 @@ export function CommandMenu() {
           </button>
         </div>
         <div className="max-h-[420px] overflow-y-auto p-2">
-          <p className="eyebrow px-2 pb-2 pt-1">Navigate</p>
-          <div id="command-results" role={results.length ? "listbox" : undefined} aria-label={results.length ? "Command results" : undefined}>
+          <p className="eyebrow px-2 pb-2 pt-1">{t("Navigate")}</p>
+          <div id="command-results" role={results.length ? "listbox" : undefined} aria-label={results.length ? t("Command results") : undefined}>
           {results.length ? (
             results.map((command, index) => {
               const Icon = command.icon;
@@ -165,17 +168,17 @@ export function CommandMenu() {
             })
           ) : (
             <div role="status" className="px-3 py-12 text-center">
-              <p className="text-sm font-medium">No matching entities</p>
-              <p className="mt-1 text-xs text-muted">Try “checkout”, “map”, “changes”, or “lab”.</p>
+              <p className="text-sm font-medium">{t("No matching entities")}</p>
+              <p className="mt-1 text-xs text-muted">{t("Try “checkout”, “map”, “changes”, or “lab”.")}</p>
             </div>
           )}
           </div>
         </div>
         <div className="flex items-center gap-4 border-t border-border px-4 py-2.5 font-mono text-[9px] text-muted">
-          <span>↑↓ move</span>
-          <span>↵ open</span>
-          <span>esc close</span>
-          <span className="ms-auto text-primary">7 workspace views</span>
+          <span>{t("↑↓ move")}</span>
+          <span>{t("↵ open")}</span>
+          <span>{t("esc close")}</span>
+          <span className="ms-auto text-primary">{t("7 workspace views")}</span>
         </div>
       </dialog>
     </>
