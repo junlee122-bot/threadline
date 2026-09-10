@@ -51,7 +51,7 @@ export function AppNav() {
         </div>
         <div className="mb-2 flex items-center justify-between px-2">
           <span className="eyebrow">Workspace</span>
-          <span className="size-1.5 rounded-full bg-success" aria-label="Workspace connected" />
+          <span className="size-1.5 rounded-full bg-inference" aria-label="Sample workspace available" />
         </div>
         <div className="mb-5 flex min-h-11 w-full items-center gap-3 rounded-lg border border-border bg-panel-soft px-3 text-start text-sm">
           <span className="grid size-7 place-items-center rounded-md bg-primary/10 font-mono text-[10px] font-bold text-primary">
@@ -88,11 +88,6 @@ export function AppNav() {
                         strokeWidth={1.7}
                       />
                       {item.label}
-                      {item.label === "Incidents" && (
-                        <span className="ms-auto rounded-full bg-danger/12 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-danger">
-                          1
-                        </span>
-                      )}
                     </Link>
                   );
                 })}
@@ -102,7 +97,7 @@ export function AppNav() {
         </nav>
 
         <div className="mt-auto overflow-hidden rounded-lg border border-border bg-panel-soft">
-          <div className="grid grid-cols-4 gap-px border-b border-border bg-border" aria-label="Source connector health">
+          <div className="grid grid-cols-4 gap-px border-b border-border bg-border" aria-label="Sample source categories">
             {["GH", "OT", "FF", "CX"].map((source, index) => (
               <span key={source} className="flex h-7 items-center justify-center gap-1 bg-panel-soft font-mono text-[7px] text-muted">
                 <span className={cn("size-1 rounded-full", index === 3 ? "bg-inference" : "bg-success")} />{source}
@@ -112,10 +107,10 @@ export function AppNav() {
           <div className="p-3">
           <div className="mb-2 flex items-center gap-2 text-[11px] font-medium">
             <RadioTower aria-hidden="true" className="size-3.5 text-success" />
-            Evidence plane healthy
+            Evidence, ready to inspect
           </div>
           <div className="flex items-center justify-between font-mono text-[9px] text-muted">
-            <span>12 connectors</span><span className="text-success">99.98%</span>
+            <span>7 sample records</span><span className="text-inference">DEMO</span>
           </div>
           </div>
         </div>

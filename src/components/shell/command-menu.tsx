@@ -83,7 +83,7 @@ export function CommandMenu() {
         aria-label="Open command menu"
       >
         <Search aria-hidden="true" className="size-3.5" />
-        <span className="hidden truncate sm:inline">Search or ask Threadline…</span>
+        <span className="hidden truncate sm:inline">Find a view or incident…</span>
         <kbd className="ms-auto hidden rounded border border-border px-1.5 py-0.5 font-mono text-[9px] text-muted sm:inline">
           ⌘ K
         </kbd>
@@ -119,7 +119,7 @@ export function CommandMenu() {
               }
             }}
             className="h-14 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
-            placeholder="Search services, incidents, commits—or ask a question…"
+            placeholder="Search commands: incident, map, reports…"
             aria-label="Search commands"
             role="combobox"
             aria-expanded="true"
@@ -166,7 +166,7 @@ export function CommandMenu() {
           ) : (
             <div role="status" className="px-3 py-12 text-center">
               <p className="text-sm font-medium">No matching entities</p>
-              <p className="mt-1 text-xs text-muted">Try a service name, commit SHA, or a wider phrase.</p>
+              <p className="mt-1 text-xs text-muted">Try “checkout”, “map”, “changes”, or “lab”.</p>
             </div>
           )}
           </div>
@@ -175,7 +175,7 @@ export function CommandMenu() {
           <span>↑↓ move</span>
           <span>↵ open</span>
           <span>esc close</span>
-          <span className="ms-auto text-primary">12 workspace sources</span>
+          <span className="ms-auto text-primary">7 workspace views</span>
         </div>
       </dialog>
     </>

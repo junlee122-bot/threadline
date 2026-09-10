@@ -1,159 +1,115 @@
 # THREADLINE
 
-> **Every signal, traced to source.**
+> Every signal, traced to source.
 
-Threadline now includes the original **FAULTLINE — Incident Commander** as **Crisis Lab**. The operational product explains what happened in a real incident; the training twin lets a user command a separate cache-stampede scenario, see each intervention change the live system model, and receive a scored after-action review.
+Threadline is an interactive portfolio product for investigating software incidents, reviewing change risk, and practicing operational decisions. It brings a synthetic commerce incident into one workspace: inspect a source record, compare an explanation with alternatives, review a mitigation, verify recovery, and hand off the result.
 
-Threadline is an evidence-native software intelligence command center. It connects intent, code, deployments, runtime telemetry, and customer impact into one time-aware causal thread—then puts human approval and recovery verification around AI-proposed actions.
+**The shipped app uses deterministic sample data.** It has no live telemetry ingestion, connected production accounts, AI model calls, or production action execution. Its dialogs, filters, replay controls, exports, and training model work locally so the experience can be reviewed without credentials.
 
 [![CI](https://github.com/junlee122-bot/something/actions/workflows/ci.yml/badge.svg)](https://github.com/junlee122-bot/something/actions/workflows/ci.yml)
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![WCAG](https://img.shields.io/badge/accessibility-WCAG%202.2%20AA-B8F66A)](https://www.w3.org/WAI/standards-guidelines/wcag/)
 
-This repository is a portfolio-scale concept product. It runs on deterministic demo data, requires no account or API key, and never changes a real production system.
+Start with the [five-minute reviewer guide](docs/DEMO_GUIDE.md).
 
-## Why this project exists
+See [verification coverage and environment limits](docs/VERIFICATION.md) for the tested workflows.
 
-During an incident, teams already have the facts—but those facts live in a pull request, deployment dashboard, flag audit, trace waterfall, SLO monitor, analytics tool, and chat room. Threadline turns that fragmented evidence into an inspectable operating picture.
+## What you can do
 
-The product deliberately avoids the “chatbot on top of a dashboard” pattern:
+- Compare the **09:25 investigation** and **09:40 recovery** snapshots in Command Center. Metrics, incident links, and the operating narrative follow the selected snapshot.
+- Search the evidence library and inspect bundled source attributes, timestamps, service references, and stable record IDs.
+- Explore three guided investigation questions, including alternative explanations and measurable recovery conditions.
+- Review three handoff commitments, acknowledge each snapshot locally, and download a Markdown brief. Handoff state lasts only while the page remains mounted.
+- Replay the incident through ten recorded events. Evidence and proposed actions are gated by the selected time; seeking or resetting cancels an in-progress demo action.
+- Inspect and copy a stakeholder communication draft. Nothing is sent or published.
+- Switch report periods and export matching JSON or CSV data, including explicit modeled-estimate methodology.
+- Run **FAULTLINE scenario 047** in Crisis Lab, make six decisions, and review canonical competency scores and a no-intervention comparison.
 
-- AI claims are labeled as **observed**, **inferred**, or **proposed**.
-- Every conclusion links back to evidence, freshness, and conflicting signals.
-- Source health and snapshot freshness stay visible as a shared evidence-plane contract across product routes.
-- The system can be replayed, so the interface shows what was knowable at each moment.
-- Agent actions expose the target, blast radius, rollback plan, approver, and success criteria.
-- Recovery is not declared until a verification window passes.
-- Command views preserve ownership, change freezes, stakeholder cadence, and shift-handoff state—not only telemetry.
+## The sample incident
 
-## The demo story
+Meridian Market's checkout incident is a fictional recorded scenario on **14 July 2026, UTC**:
 
-The Meridian Market demo follows one incident across every screen:
+    PR #1842 changes retry behavior
+      → checkout-api@2.18.0 deploys
+      → instant-tax-v2 exposure rises to 100%
+      → tax-adapter connection pressure and checkout latency increase
+      → a feature rollback is reviewed
+      → exposure reaches 0%
+      → latency and errors pass the recorded recovery window
 
-```text
-PR #1842
-   → checkout-api@2.18.0 deploy
-   → instant-tax-v2 rollout to 100%
-   → tax-adapter pool saturation
-   → p95 latency +171% / error rate 4.9%
-   → checkout conversion −7.3%
-   → human-approved flag rollback
-   → five-minute recovery verification
-```
+The first latency alert appears at 09:21. Peak p95 is **1.84 seconds at 09:22**, against a 680 ms baseline. The incident is declared at 09:24, mitigation is proposed at 09:25, the recorded rollback occurs at 09:31, and the 09:35–09:40 samples verify five continuous minutes below both recovery thresholds.
 
-Open `/incidents/inc-2471` and use the replay controls to watch the graph, metrics, timeline, evidence, and proposed action advance together.
+Conversion changes distinguish percentages from percentage points: 68.4% to 63.5% is a **4.9 percentage-point decline**, or about **7.2% relative**. Customer-impact attribution remains an inference; revenue values are modeled estimates.
 
-The command and incident surfaces begin at the investigating snapshot so the interaction can be replayed; Agents and Reports preserve the verified 09:40 outcome of that same thread.
-
-### The Crisis Lab story
-
-Open `/lab` to run FAULTLINE scenario 047: an eight-minute cache-stampede incident with six decision gates, 18 production actions, three endings, live topology and telemetry, keyboard controls, and a downloadable after-action report. The model is deterministic, so equal decisions always produce equal outcomes.
+The Crisis Lab is a separate cache-stampede exercise with eight minutes of modeled time, six gates, and three choices per gate. It shares the operating language, not the incident's timeline or state. Its three competency domains are **causal diagnosis, load containment, and recovery discipline**. A high grade or controlled traffic does not imply full recovery: the residual error objective is evaluated separately.
 
 ## Product surfaces
 
-| Route | Experience |
+| Route | Implemented experience |
 | --- | --- |
-| `/` | Cinematic product narrative and live causal-thread preview |
-| `/command` | Evidence-backed briefing, decision frame, causal graph, attention queue, shift handoff |
-| `/incidents` | Active and historical incident operating view |
-| `/incidents/inc-2471` | Time replay, incident-command protocol, evidence inspector, safe mitigation |
-| `/lab` | FAULTLINE crisis simulation, six command gates, live system model, competency debrief |
-| `/map` | Interactive service topology with health/change/ownership modes |
-| `/changes` | Searchable, explainable change-risk intelligence |
-| `/agents` | Agent mission control with inspectable steps and approvals |
-| `/reports` | DORA, SLO, customer impact, and weekly reliability narrative |
-| `/offline` | PWA fallback with useful navigation |
-| `/api/health` | Minimal deployment health endpoint |
+| `/` | Product narrative and demo entry |
+| `/command` | Two frozen snapshots, evidence inspection, guided questions, local handoff, Markdown export |
+| `/incidents` | Sample incident inventory |
+| `/incidents/inc-2471` | Time-aware replay, source inspection, guarded demo mitigation, stakeholder draft |
+| `/lab` | Deterministic crisis exercise and after-action report |
+| `/map` | Searchable topology with topology, risk, and activity modes |
+| `/changes` | Search, risk filters, change details, and verification context |
+| `/agents` | Sample execution traces, scheduled-plan previews, local demo review |
+| `/reports` | Period-specific coverage, modeled effort, risk distribution, and context completeness |
+| `/api/reports/impact` | JSON report; `?period=30d&format=csv` exports chart rows |
+| `/offline` | Minimal offline fallback |
+| `/api/health` | Application health response |
 
-Global `⌘/Ctrl K` opens a command palette from every product route.
-
-## Engineering highlights
-
-- Next.js 16 App Router and React 19
-- Server Components by default; focused Client Component islands for replay, graph selection, filters, and dialogs
-- TypeScript strict mode with a typed domain model and deterministic fixtures
-- Deterministic incident simulation engine with bounded interventions, causal dynamics, canonical scoring, and three endings
-- Tailwind CSS v4 with a custom token system and Geist typography
-- Accessible SVG/data visualization with timeline and table alternatives
-- Native dialog semantics for command and approval flows
-- Installable PWA metadata and conservative offline service worker
-- Security headers for browser capability isolation and service-worker delivery
-- Vitest data and utility invariants
-- GitHub Actions checks for lint, typecheck, tests, and production build
+Use `⌘/Ctrl K` to search product navigation. The activity inbox contains two sample items and supports local read state.
 
 ## Local development
 
-Requirements:
+Requires Node.js 24+ and npm 11+.
 
-- Node.js 24 or newer
-- npm 11 or newer
+    git clone https://github.com/junlee122-bot/something.git
+    cd something
+    npm ci
+    npm run dev
 
-```bash
-git clone https://github.com/junlee122-bot/something.git
-cd something
-npm install
-npm run dev
-```
+Open [http://localhost:3000](http://localhost:3000). No account, API key, or `.env` file is required. The optional `NEXT_PUBLIC_SITE_URL` configures canonical metadata, robots, and sitemap URLs for a deployment.
 
-Open [http://localhost:3000](http://localhost:3000).
+## Engineering
 
-No `.env` file is required. Set `NEXT_PUBLIC_SITE_URL` only when deploying so canonical metadata, robots, and sitemap URLs use the production origin.
+Next.js 16 App Router, React 19, strict TypeScript, Tailwind CSS v4, and Geist typography support server-rendered route shells and focused interactive components.
 
-## Quality commands
+The implementation separates the recorded incident reducer, simulation engine, and report fixtures from their presentation. Incident transitions reject stale timer callbacks. Crisis Lab resolves submitted choices against canonical scenario definitions. Report UI and downloads share one period dataset. Charts include explicit semantic colors and text or table alternatives.
 
-```bash
-npm run lint        # Next/React lint rules
-npm run typecheck   # TypeScript, no emit
-npm run test        # deterministic unit/invariant tests
-npm run build       # production build and route generation
-npm run check       # all of the above
-```
+    npm run lint
+    npm run typecheck
+    npm run test
+    npm run build
+    npm run check
 
-## Architecture
+GitHub Actions runs lint, type checking, tests, and a production build. Browser checks supplement those commands; automated tests alone do not establish visual or accessibility conformance.
 
-```mermaid
-flowchart LR
-  Sources["GitHub · OTel · Flags · Commerce"] --> Normalize["Canonical events"]
-  Normalize --> Graph["Temporal evidence graph"]
-  Normalize --> Metrics["Metric series"]
-  Graph --> Insight["Labeled AI insights"]
-  Metrics --> Insight
-  Insight --> UI["Next.js command center"]
-  TrainingTwin["FAULTLINE Crisis Lab"] --> UI
-  UI --> Approval["Human approval boundary"]
-  Approval --> Verify["Action + recovery verification"]
-```
+## Scope and limitations
 
-The shipped demo replaces the ingestion layer with fixed, typed data so the full user journey is reproducible. A production evolution would preserve source events in an append-only log and store generated insights separately.
+This is a functioning concept demo, not a deployed incident-management backend. Source labels describe fixtures; production roles, approvals, and agent traces are simulated. Guided explanations are authored content, not generated answers. There is no user authentication, shared audit store, durable handoff persistence, or connector credential handling.
 
-Read the deeper documents:
+Reports describe synthetic cohorts and modeled effort, not measured productivity or verified ROI. JSON keeps legacy incident/DORA/SLO snapshot fields for compatibility and labels them separately from the selected report period.
 
-- [Architecture](docs/ARCHITECTURE.md)
+The service worker caches a minimal offline fallback and icon. It does not provide the full application, API data, or Next.js assets offline.
+
+## Accessibility approach
+
+The interface includes semantic landmarks, keyboard focus, native dialogs, reduced-motion handling, non-color state labels, and text alternatives for visual information. These are implemented design practices, **not a WCAG certification or a claim of full conformance**. Assistive-technology coverage and a complete accessibility audit remain future work.
+
+## Documentation and references
+
+- [Five-minute reviewer guide](docs/DEMO_GUIDE.md)
 - [Product brief](docs/PRODUCT.md)
+- [Architecture](docs/ARCHITECTURE.md)
 - [Design system](docs/DESIGN_SYSTEM.md)
 - [Research references](docs/REFERENCES.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
 
-## Accessibility
-
-Threadline targets WCAG 2.2 AA:
-
-- semantic landmarks and a skip link;
-- visible keyboard focus and minimum control sizes;
-- state labels that do not depend on color;
-- reduced-motion behavior;
-- native dialog focus management;
-- accessible names for charts and metric controls;
-- graph information available as a timeline and evidence table;
-- responsive completion of the incident-review flow down to 320 CSS px.
-
-## Research lineage
-
-The information architecture draws from primary-source research across Linear, GitHub, Vercel, Sentry, Datadog, Graphite, and Sourcegraph, plus W3C, OpenTelemetry, and DORA guidance. Threadline does not copy a single product's visual identity: it combines provenance, progressive disclosure, keyboard navigation, topology, and human-supervised agent patterns into its own evidence-thread model.
-
-See [docs/REFERENCES.md](docs/REFERENCES.md) for exact sources and the design decisions informed by each.
+The separation of incident command, operations, and communications draws on [Google SRE's incident-response guidance](https://sre.google/workbook/incident-response/). Threadline turns those responsibilities into visible ownership, review boundaries, and local communication drafts.
 
 ## License
 

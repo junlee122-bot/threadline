@@ -3,7 +3,7 @@ import { CommandCenter } from "@/components/command/command-center";
 
 export const metadata: Metadata = {
   title: "Command Center",
-  description: "A live, evidence-backed briefing across code, runtime, and customer impact.",
+  description: "A time-aware, evidence-backed sample briefing across code, runtime, and modeled customer impact.",
 };
 
 export default function CommandPage() {

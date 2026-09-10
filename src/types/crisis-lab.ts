@@ -109,6 +109,55 @@ export interface LabSimulationSnapshot {
 
 export type LabEndingId = "sovereign" | "contained" | "cascade";
 
+export type LabCompetencyId = "diagnosis" | "containment" | "recovery";
+
+export interface LabPracticeRecommendation {
+  decisionId: string;
+  title: string;
+  selectedLabel: string | null;
+  recommendedLabel: string;
+  recommendedCommand: string;
+  rationale: string;
+  exercise: string;
+  score: number | null;
+}
+
+export interface LabCompetency {
+  id: LabCompetencyId;
+  label: string;
+  description: string;
+  score: number;
+  completed: number;
+  total: number;
+  decisions: LabPracticeRecommendation[];
+}
+
+export interface LabAssessment {
+  rubricVersion: string;
+  completed: number;
+  total: number;
+  referenceMatches: number;
+  decisionQuality: number;
+  competencies: LabCompetency[];
+  practice: LabPracticeRecommendation[];
+}
+
+export interface LabOutcomeMetrics {
+  finalHealth: number;
+  peakAffectedUsers: number;
+  revenueLost: number;
+  latency: number;
+  errorRate: number;
+  dbConnections: number;
+  cacheHitRate: number;
+}
+
+export interface LabOutcomeComparison {
+  baseline: LabOutcomeMetrics;
+  run: LabOutcomeMetrics;
+  timeline: Array<{ elapsed: number; baselineHealth: number; runHealth: number }>;
+}
+
 export interface LabIncidentResult {
   ending: LabEndingId;
   grade: "S" | "A" | "B" | "C" | "D";
@@ -119,4 +168,10 @@ export interface LabIncidentResult {
   revenueLost: number;
   finalHealth: number;
   accuracy: number;
+  recovered: boolean;
+  trafficGuardMet: boolean;
+  trafficGuardSeconds: number | null;
+  errorObjectiveMet: boolean;
+  assessment: LabAssessment;
+  comparison: LabOutcomeComparison;
 }

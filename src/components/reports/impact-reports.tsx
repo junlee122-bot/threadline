@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import {
   ArrowDown,
@@ -23,107 +23,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-type Period = "7d" | "30d" | "90d";
+import { impactReports, reportMethodology, type ReportMetric, type ReportPeriodId } from "@/lib/impact-reports";
 
-type ReportPeriod = {
-  label: string;
-  range: string;
-  headline: string;
-  change: string;
-  metrics: Array<{
-    label: string;
-    value: string;
-    delta: string;
-    positive: boolean;
-    detail: string;
-    icon: LucideIcon;
-  }>;
-  hours: number[];
-  volume: number[];
-  labels: string[];
-  riskMix: Array<{ label: string; value: number; count: number; color: string }>;
-  services: Array<{ name: string; owner: string; score: number; changes: number; direction: "up" | "down" | "same" }>;
-};
+type Period = ReportPeriodId;
 
-const reportData: Record<Period, ReportPeriod> = {
-  "7d": {
-    label: "Last 7 days",
-    range: "Jul 8 – Jul 14, 2026",
-    headline: "18.4 hours returned to engineering",
-    change: "32% more than the previous week",
-    metrics: [
-      { label: "Change coverage", value: "96%", delta: "+4.2%", positive: true, detail: "462 of 481 changes analyzed", icon: GitPullRequest },
-      { label: "Critical risks caught", value: "11", delta: "+3", positive: true, detail: "before reaching production", icon: ShieldCheck },
-      { label: "Time to context", value: "7.4m", delta: "−38%", positive: true, detail: "median across all reviews", icon: TimerReset },
-      { label: "Architecture freshness", value: "91%", delta: "+6.7%", positive: true, detail: "of system briefs verified", icon: Network },
-    ],
-    hours: [1.4, 2.1, 2.5, 2.2, 3.4, 3.1, 3.7],
-    volume: [54, 67, 71, 59, 82, 73, 75],
-    labels: ["Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon"],
-    riskMix: [
-      { label: "Routine", value: 67, count: 322, color: "bg-emerald-300" },
-      { label: "Watch", value: 27, count: 129, color: "bg-amber-300" },
-      { label: "Critical", value: 6, count: 30, color: "bg-rose-400" },
-    ],
-    services: [
-      { name: "orders", owner: "Commerce", score: 72, changes: 31, direction: "down" },
-      { name: "api-gateway", owner: "Core Services", score: 84, changes: 23, direction: "up" },
-      { name: "identity", owner: "Trust", score: 96, changes: 5, direction: "same" },
-      { name: "billing", owner: "Money Movement", score: 88, changes: 11, direction: "up" },
-    ],
-  },
-  "30d": {
-    label: "Last 30 days",
-    range: "Jun 15 – Jul 14, 2026",
-    headline: "76.2 hours returned to engineering",
-    change: "24% more than the previous 30 days",
-    metrics: [
-      { label: "Change coverage", value: "94%", delta: "+2.8%", positive: true, detail: "1,884 of 2,004 changes analyzed", icon: GitPullRequest },
-      { label: "Critical risks caught", value: "38", delta: "+9", positive: true, detail: "before reaching production", icon: ShieldCheck },
-      { label: "Time to context", value: "8.1m", delta: "−29%", positive: true, detail: "median across all reviews", icon: TimerReset },
-      { label: "Architecture freshness", value: "89%", delta: "+11%", positive: true, detail: "of system briefs verified", icon: Network },
-    ],
-    hours: [12.8, 15.4, 14.9, 18.7, 14.4],
-    volume: [338, 397, 421, 463, 385],
-    labels: ["Jun 15", "Jun 22", "Jun 29", "Jul 6", "Jul 13"],
-    riskMix: [
-      { label: "Routine", value: 64, count: 1283, color: "bg-emerald-300" },
-      { label: "Watch", value: 30, count: 601, color: "bg-amber-300" },
-      { label: "Critical", value: 6, count: 120, color: "bg-rose-400" },
-    ],
-    services: [
-      { name: "orders", owner: "Commerce", score: 78, changes: 124, direction: "down" },
-      { name: "api-gateway", owner: "Core Services", score: 86, changes: 92, direction: "up" },
-      { name: "identity", owner: "Trust", score: 95, changes: 28, direction: "up" },
-      { name: "billing", owner: "Money Movement", score: 87, changes: 51, direction: "same" },
-    ],
-  },
-  "90d": {
-    label: "Last 90 days",
-    range: "Apr 16 – Jul 14, 2026",
-    headline: "231 hours returned to engineering",
-    change: "Equivalent to 5.8 engineering weeks",
-    metrics: [
-      { label: "Change coverage", value: "92%", delta: "+14%", positive: true, detail: "5,498 changes analyzed", icon: GitPullRequest },
-      { label: "Critical risks caught", value: "109", delta: "+41", positive: true, detail: "before reaching production", icon: ShieldCheck },
-      { label: "Time to context", value: "8.8m", delta: "−46%", positive: true, detail: "from a 16.3m baseline", icon: TimerReset },
-      { label: "Architecture freshness", value: "87%", delta: "+24%", positive: true, detail: "of system briefs verified", icon: Network },
-    ],
-    hours: [18, 24, 29, 27, 34, 41, 58],
-    volume: [602, 687, 711, 742, 826, 918, 1012],
-    labels: ["Apr", "", "May", "", "Jun", "", "Jul"],
-    riskMix: [
-      { label: "Routine", value: 62, count: 3706, color: "bg-emerald-300" },
-      { label: "Watch", value: 32, count: 1913, color: "bg-amber-300" },
-      { label: "Critical", value: 6, count: 358, color: "bg-rose-400" },
-    ],
-    services: [
-      { name: "orders", owner: "Commerce", score: 82, changes: 351, direction: "up" },
-      { name: "api-gateway", owner: "Core Services", score: 88, changes: 278, direction: "up" },
-      { name: "identity", owner: "Trust", score: 95, changes: 84, direction: "same" },
-      { name: "billing", owner: "Money Movement", score: 86, changes: 158, direction: "up" },
-    ],
-  },
+const metricIcons = {
+  changes: GitPullRequest,
+  shield: ShieldCheck,
+  timer: TimerReset,
+  network: Network,
 };
 
 const periodTabs: Array<{ id: Period; label: string }> = [
@@ -135,7 +43,7 @@ const periodTabs: Array<{ id: Period; label: string }> = [
 export function ImpactReports() {
   const [period, setPeriod] = useState<Period>("7d");
   const [narrativeEvidenceOpen, setNarrativeEvidenceOpen] = useState(false);
-  const report = reportData[period];
+  const report = impactReports[period];
 
   return (
     <section className="space-y-5 pb-8">
@@ -147,10 +55,10 @@ export function ImpactReports() {
           </div>
           <h1 className="text-2xl font-semibold tracking-[-0.04em] text-white sm:text-3xl">Reports</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/60">
-            Make invisible leverage visible—from risk prevented to time returned and context kept fresh.
+            Review coverage, context quality, and modeled effort across a clearly scoped demo cohort.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-lg border border-white/10 bg-white/[0.025] p-1" role="group" aria-label="Report period">
             {periodTabs.map((tab) => (
               <button
@@ -164,8 +72,11 @@ export function ImpactReports() {
               </button>
             ))}
           </div>
-          <a href={`/api/reports/impact?period=${period}`} download aria-label="Download report as JSON" className="grid size-10 place-items-center rounded-lg border border-white/10 bg-white/[0.025] text-white/55 hover:border-white/20 hover:text-white">
-            <Download className="size-4" aria-hidden="true" />
+          <a href={`/api/reports/impact?period=${period}`} download aria-label="Download selected report as JSON" className="flex h-10 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.025] px-3 text-[10px] text-white/65 hover:border-white/20 hover:text-white">
+            <Download className="size-3.5" aria-hidden="true" />JSON
+          </a>
+          <a href={`/api/reports/impact?period=${period}&format=csv`} download aria-label="Download selected chart data as CSV" className="flex h-10 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.025] px-3 text-[10px] text-white/65 hover:border-white/20 hover:text-white">
+            CSV
           </a>
         </div>
       </header>
@@ -186,10 +97,10 @@ export function ImpactReports() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/10 bg-white/10 lg:min-w-[315px]">
-              <HeroStat value="1,284" label="agent actions" />
-              <HeroStat value="99.2%" label="traceable claims" />
-              <HeroStat value="4.7×" label="review leverage" />
-              <HeroStat value="0" label="escaped critical" />
+              <HeroStat value={report.trackedChanges.toLocaleString("en-US")} label="tracked changes" />
+              <HeroStat value={report.analyzedChanges.toLocaleString("en-US")} label="analyzed changes" />
+              <HeroStat value={String(report.trackedChanges - report.analyzedChanges)} label="awaiting analysis" />
+              <HeroStat value="KST" label="snapshot timezone" />
             </div>
           </div>
         </div>
@@ -206,16 +117,16 @@ export function ImpactReports() {
               <div>
                 <div className="flex items-center gap-2">
                   <Zap className="size-3.5 text-[#b7f34b]" aria-hidden="true" />
-                  <h2 className="text-sm font-semibold text-white/82">Leverage over time</h2>
+                  <h2 className="text-sm font-semibold text-white/82">Modeled effort over time</h2>
                 </div>
-                <p className="mt-1.5 text-[10px] text-white/50">Hours returned through faster context, review, and documentation.</p>
+                <p className="mt-1.5 text-[10px] leading-4 text-white/60">Synthetic hours avoided and tracked changes. Separate axes; final buckets can be partial.</p>
               </div>
               <div className="flex items-center gap-4 text-[9px] text-white/50">
-                <span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-[#b7f34b]" />Hours returned</span>
-                <span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-cyan-300" />Change volume</span>
+                <span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-[#b7f34b]" />Modeled hours</span>
+                <span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-cyan-300" />Tracked changes</span>
               </div>
             </div>
-            <LeverageChart hours={report.hours} volume={report.volume} labels={report.labels} />
+            <LeverageChart key={period} hours={report.hours} volume={report.volume} labels={report.labels} bucketStarts={report.bucketStarts} bucketEnds={report.bucketEnds} />
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-[#0b0f0d] p-4 sm:p-5">
@@ -223,7 +134,7 @@ export function ImpactReports() {
               <ShieldCheck className="size-3.5 text-[#b7f34b]" aria-hidden="true" />
               <h2 className="text-sm font-semibold text-white/82">Change risk mix</h2>
             </div>
-            <p className="mt-1.5 text-[10px] text-white/50">Distribution across analyzed changes.</p>
+            <p className="mt-1.5 text-[10px] text-white/50">Distribution across all {report.trackedChanges.toLocaleString("en-US")} tracked changes.</p>
             <div className="mt-6 flex h-2.5 overflow-hidden rounded-full bg-white/5">
               {report.riskMix.map((risk) => <div key={risk.label} className={risk.color} style={{ width: `${risk.value}%` }} />)}
             </div>
@@ -241,7 +152,7 @@ export function ImpactReports() {
               <div className="flex gap-2.5">
                 <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-amber-300" aria-hidden="true" />
                 <p className="text-[10px] leading-4 text-white/55">
-                  Critical changes are stable at <span className="text-white/65">6%</span>, while pre-merge detection improved by <span className="text-[#b7f34b]">12 points</span>.
+                  <span className="text-white/65">{report.riskMix.at(-1)?.count} changes</span> carry critical risk in this sample. A risk classification is not proof that an incident was prevented.
                 </p>
               </div>
             </div>
@@ -252,14 +163,14 @@ export function ImpactReports() {
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b0f0d]">
             <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
               <div>
-                <h2 className="text-sm font-semibold text-white/82">System confidence</h2>
-                <p className="mt-1 text-[10px] text-white/50">High-change services ranked by contextual health.</p>
+                <h2 className="text-sm font-semibold text-white/82">Context completeness</h2>
+                <p className="mt-1 text-[10px] text-white/50">Illustrative score / 100 · ownership, contracts, recent evidence.</p>
               </div>
               <Link href="/map" className="text-[10px] font-medium text-[#b7f34b] hover:text-[#cafa74]">View system map</Link>
             </div>
             <div className="divide-y divide-white/[0.07]">
               {report.services.map((service) => (
-                <div key={service.name} className="grid grid-cols-[minmax(0,1fr)_70px_92px] items-center gap-4 px-5 py-3.5">
+                <div key={service.name} className="grid grid-cols-[minmax(0,1fr)_54px] items-center gap-x-4 gap-y-2 px-5 py-3.5 sm:grid-cols-[minmax(0,1fr)_70px_92px]">
                   <div className="min-w-0">
                     <p className="truncate font-mono text-[11px] text-white/62">{service.name}</p>
                     <p className="mt-1 truncate text-[9px] text-white/50">{service.owner} · {service.changes} changes</p>
@@ -268,7 +179,7 @@ export function ImpactReports() {
                     {service.direction === "up" ? <TrendingUp className="size-3 text-emerald-300" aria-label="Improving" /> : service.direction === "down" ? <TrendingDown className="size-3 text-rose-300" aria-label="Declining" /> : <span className="size-3 text-center text-[9px] text-white/50" aria-label="Stable">—</span>}
                     <span className="font-mono text-xs text-white/62">{service.score}</span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                  <div className="col-span-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06] sm:col-span-1">
                     <div className={`h-full rounded-full ${service.score >= 90 ? "bg-[#b7f34b]" : service.score >= 80 ? "bg-cyan-300" : "bg-amber-300"}`} style={{ width: `${service.score}%` }} />
                   </div>
                 </div>
@@ -284,24 +195,33 @@ export function ImpactReports() {
                 Narrative insight
               </div>
               <p className="mt-4 text-base font-medium leading-6 text-white/78">
-                Review speed improved without lowering scrutiny.
+                {report.narrative.title}
               </p>
               <p className="mt-2 text-xs leading-5 text-white/60">
-                The largest gain came from contract-aware summaries in Commerce, where median time-to-context fell 46% while critical findings rose.
+                {report.narrative.detail}
               </p>
               <div className="mt-5 grid grid-cols-2 gap-2">
-                <InsightStat label="Commerce review" value="−46%" icon={Clock3} />
-                <InsightStat label="Critical findings" value="+18%" icon={TriangleAlert} />
+                <InsightStat label="Context time" value={report.narrative.reviewChange} icon={Clock3} />
+                <InsightStat label="Critical findings" value={report.narrative.findingChange} icon={TriangleAlert} />
               </div>
               <button type="button" aria-expanded={narrativeEvidenceOpen} onClick={() => setNarrativeEvidenceOpen((open) => !open)} className="mt-5 flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] text-[10px] font-semibold text-white/55 hover:border-white/20 hover:text-white">
                 <Bot className="size-3.5" aria-hidden="true" />
-                {narrativeEvidenceOpen ? "Hide supporting evidence" : "Ask about this report"}
+                {narrativeEvidenceOpen ? "Hide cohort details" : "Inspect cohort details"}
               </button>
-              {narrativeEvidenceOpen ? <p role="status" className="mt-3 rounded-lg border border-violet-300/15 bg-violet-300/[0.04] p-3 text-[10px] leading-5 text-white/60">The narrative is supported by review-cycle samples across 34 changes, six service scorecards, and two incident retrospectives. Commerce contributed 61% of the measured improvement.</p> : null}
+              {narrativeEvidenceOpen ? <p role="status" className="mt-3 rounded-lg border border-violet-300/15 bg-violet-300/[0.04] p-3 text-[10px] leading-5 text-white/60">{report.narrative.evidence}</p> : null}
             </div>
           </div>
         </div>
       </div>
+      <details className="rounded-xl border border-white/10 bg-white/[0.02] p-4 text-xs text-white/60">
+        <summary className="cursor-pointer font-medium text-white/80">Methodology &amp; data provenance</summary>
+        <div className="mt-3 grid gap-4 leading-6 md:grid-cols-3">
+          <p><span className="block font-medium text-primary">Modeled effort</span>{reportMethodology.hours}</p>
+          <p><span className="block font-medium text-signal">Cohort denominator</span>{reportMethodology.volume}</p>
+          <p><span className="block font-medium text-inference">Context quality</span>{reportMethodology.contextScore}</p>
+        </div>
+        <p className="mt-4 border-t border-white/10 pt-3 font-mono text-[10px]">Snapshot: Jul 14, 2026, 19:42 KST · JSON and CSV use this selected period.</p>
+      </details>
     </section>
   );
 }
@@ -315,7 +235,8 @@ function HeroStat({ value, label }: { value: string; label: string }) {
   );
 }
 
-function MetricCard({ label, value, delta, positive, detail, icon: Icon }: ReportPeriod["metrics"][number]) {
+function MetricCard({ label, value, delta, positive, direction, detail, icon }: ReportMetric) {
+  const Icon = metricIcons[icon];
   return (
     <div className="rounded-xl border border-white/10 bg-[#0b0f0d] p-4">
       <div className="flex items-center justify-between">
@@ -323,7 +244,7 @@ function MetricCard({ label, value, delta, positive, detail, icon: Icon }: Repor
           <Icon className="size-4" aria-hidden="true" />
         </span>
         <span className={`flex items-center gap-1 rounded-full px-2 py-1 font-mono text-[9px] ${positive ? "bg-[#b7f34b]/10 text-[#b7f34b]" : "bg-rose-400/10 text-rose-300"}`}>
-          {positive ? <ArrowUp className="size-2.5" aria-hidden="true" /> : <ArrowDown className="size-2.5" aria-hidden="true" />}{delta}
+          {direction === "up" ? <ArrowUp className="size-2.5" aria-hidden="true" /> : <ArrowDown className="size-2.5" aria-hidden="true" />}{delta}
         </span>
       </div>
       <p className="mt-4 font-mono text-2xl font-medium tracking-tight text-white">{value}</p>
@@ -333,13 +254,14 @@ function MetricCard({ label, value, delta, positive, detail, icon: Icon }: Repor
   );
 }
 
-function LeverageChart({ hours, volume, labels }: { hours: number[]; volume: number[]; labels: string[] }) {
+function LeverageChart({ hours, volume, labels, bucketStarts, bucketEnds }: { hours: number[]; volume: number[]; labels: string[]; bucketStarts: string[]; bucketEnds: string[] }) {
+  const gradientId = `hours-${useId().replace(/:/g, "")}`;
   const width = 640;
-  const height = 210;
-  const paddingX = 22;
-  const paddingY = 24;
-  const maxHours = Math.max(...hours) * 1.2;
-  const maxVolume = Math.max(...volume) * 1.1;
+  const height = 240;
+  const paddingX = 46;
+  const paddingY = 32;
+  const maxHours = Math.ceil(Math.max(...hours) * 1.15);
+  const maxVolume = Math.ceil(Math.max(...volume) * 1.1 / 10) * 10;
   const hourPoints = hours.map((value, index) => ({
     x: paddingX + (index * (width - paddingX * 2)) / Math.max(hours.length - 1, 1),
     y: height - paddingY - (value / maxHours) * (height - paddingY * 2),
@@ -354,27 +276,42 @@ function LeverageChart({ hours, volume, labels }: { hours: number[]; volume: num
 
   return (
     <div className="mt-5">
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full overflow-visible" role="img" aria-label={`Hours returned increased from ${hours[0]} to ${hours.at(-1)} over this period`}>
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-auto w-full overflow-visible" role="img" aria-label={`Modeled effort and tracked changes across ${hours.length} buckets. Exact values are available in the table below.`}>
         <defs>
-          <linearGradient id="hours-area" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#b7f34b" stopOpacity=".18" />
             <stop offset="1" stopColor="#b7f34b" stopOpacity="0" />
           </linearGradient>
         </defs>
-        {[0.2, 0.4, 0.6, 0.8].map((ratio) => (
-          <line key={ratio} x1={paddingX} x2={width - paddingX} y1={paddingY + ratio * (height - paddingY * 2)} y2={paddingY + ratio * (height - paddingY * 2)} stroke="rgba(255,255,255,.055)" strokeWidth="1" />
+        <text x={paddingX} y="13" fill="#b7f34b" fontSize="9">Modeled hours</text>
+        <text x={width - paddingX} y="13" fill="#67e8f9" fontSize="9" textAnchor="end">Tracked changes</text>
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => (
+          <g key={ratio}>
+            <line x1={paddingX} x2={width - paddingX} y1={paddingY + ratio * (height - paddingY * 2)} y2={paddingY + ratio * (height - paddingY * 2)} stroke="rgba(255,255,255,.07)" strokeWidth="1" />
+            <text x={paddingX - 10} y={paddingY + ratio * (height - paddingY * 2) + 3} textAnchor="end" fill="rgba(183,243,75,.65)" fontSize="9">{Number((maxHours * (1 - ratio)).toFixed(1))}</text>
+            <text x={width - paddingX + 10} y={paddingY + ratio * (height - paddingY * 2) + 3} fill="rgba(103,232,249,.65)" fontSize="9">{Math.round(maxVolume * (1 - ratio))}</text>
+          </g>
         ))}
-        <path d={areaPath} fill="url(#hours-area)" />
-        <path d={volumePath} fill="none" stroke="rgba(103,232,249,.34)" strokeWidth="1.5" strokeDasharray="4 5" />
+        <path d={areaPath} fill={`url(#${gradientId})`} />
+        <path d={volumePath} fill="none" stroke="rgba(103,232,249,.65)" strokeWidth="1.5" strokeDasharray="4 5" />
         <path d={hourPath} fill="none" stroke="#b7f34b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         {hourPoints.map((point, index) => (
           <g key={`${point.x}-${point.y}`}>
-            <circle cx={point.x} cy={point.y} r="5" fill="#0b0f0d" stroke="#b7f34b" strokeWidth="2" />
-            <text x={point.x} y={height - 4} textAnchor="middle" fill="rgba(255,255,255,.28)" fontSize="8">{labels[index]}</text>
+            <circle cx={point.x} cy={point.y} r="5" fill="#0b0f0d" stroke="#b7f34b" strokeWidth="2"><title>{`${bucketStarts[index]} – ${bucketEnds[index]}: ${hours[index]} modeled hours, ${volume[index]} tracked changes`}</title></circle>
+            <text x={point.x} y={height - 10} textAnchor="middle" fill="rgba(255,255,255,.6)" fontSize="9">{labels[index]}</text>
           </g>
         ))}
       </svg>
-      <div className="sr-only">Values: {hours.join(", ")} hours returned.</div>
+      <details className="mt-3 rounded-lg border border-white/10 bg-white/[0.015] p-3">
+        <summary className="cursor-pointer text-[10px] font-medium text-white/70">View exact chart data</summary>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[310px] text-left font-mono text-[10px] text-white/65">
+            <caption className="sr-only">Selected report period chart values, in Asia/Seoul timezone</caption>
+            <thead><tr className="border-b border-white/10"><th scope="col" className="pb-2 font-medium">Bucket (KST)</th><th scope="col" className="pb-2 text-right font-medium">Hours</th><th scope="col" className="pb-2 text-right font-medium">Changes</th></tr></thead>
+            <tbody>{hours.map((value, index) => <tr key={bucketStarts[index]} className="border-b border-white/[0.05] last:border-0"><th scope="row" className="py-2 font-normal">{bucketStarts[index]}{bucketEnds[index] !== bucketStarts[index] ? ` – ${bucketEnds[index].slice(5)}` : ""}</th><td className="text-right text-primary">{value.toFixed(1)}</td><td className="text-right text-signal">{volume[index]}</td></tr>)}</tbody>
+          </table>
+        </div>
+      </details>
     </div>
   );
 }
