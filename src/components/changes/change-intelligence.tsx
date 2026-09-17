@@ -269,7 +269,7 @@ export function ChangeIntelligence() {
             A risk-ranked view of every change moving through your system—before it becomes an incident.
           </p>
         </div>
-        <a href="https://github.com/junlee122-bot/something" target="_blank" rel="noreferrer" className="flex h-10 w-fit items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 text-xs font-semibold text-white/70 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white">
+        <a href="https://github.com/junlee122-bot/threadline" target="_blank" rel="noreferrer" className="flex h-10 w-fit items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-4 text-xs font-semibold text-white/70 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white">
           <GitPullRequest className="size-4" aria-hidden="true" />
           Open source repository
         </a>
@@ -502,7 +502,7 @@ function ChangeDrawer({ change, onClose }: { change: Change; onClose: () => void
           </DrawerSection>
 
           <div className="mt-7 grid grid-cols-2 gap-3">
-            <a href="https://github.com/junlee122-bot/something" target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] text-xs font-semibold text-white/60 hover:border-white/20 hover:text-white">
+            <a href="https://github.com/junlee122-bot/threadline" target="_blank" rel="noreferrer" className="flex h-10 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] text-xs font-semibold text-white/60 hover:border-white/20 hover:text-white">
               Open source <ArrowUpRight className="size-3.5" aria-hidden="true" />
             </a>
             <Link href="/agents" className="flex h-10 items-center justify-center gap-2 rounded-lg bg-[#b7f34b] text-xs font-semibold text-[#14200d] hover:bg-[#c9fa75]">

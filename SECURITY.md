@@ -8,7 +8,7 @@ Only the latest commit on `main` is supported. There are no long-lived release b
 
 ## Report a vulnerability
 
-Use [GitHub private vulnerability reporting](https://github.com/junlee122-bot/something/security/advisories/new). Please do not disclose a suspected vulnerability in a public issue, discussion, or pull request.
+Use [GitHub private vulnerability reporting](https://github.com/junlee122-bot/threadline/security/advisories/new). Please do not disclose a suspected vulnerability in a public issue, discussion, or pull request.
 
 Include, when possible:
 

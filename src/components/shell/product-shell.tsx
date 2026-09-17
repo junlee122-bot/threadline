@@ -23,7 +23,7 @@ export function ProductShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="ms-auto flex items-center gap-2">
             <CommandMenu />
-            <Link href="https://github.com/junlee122-bot/something#readme" className="hidden size-9 place-items-center rounded-md text-muted hover:bg-white/[0.04] hover:text-foreground sm:grid" aria-label="Open Threadline documentation">
+            <Link href="https://github.com/junlee122-bot/threadline#readme" className="hidden size-9 place-items-center rounded-md text-muted hover:bg-white/[0.04] hover:text-foreground sm:grid" aria-label="Open Threadline documentation">
               <CircleHelp aria-hidden="true" className="size-4" />
             </Link>
             <span className="relative grid size-9 place-items-center rounded-md text-muted" aria-label="Notifications, 2 unread" role="img">

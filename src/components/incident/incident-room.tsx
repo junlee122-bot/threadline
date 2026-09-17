@@ -232,7 +232,7 @@ export function IncidentRoom() {
                   <h3 className="mt-2 text-sm font-medium">{evidence.title}</h3>
                   <p className="mt-1 text-xs leading-5 text-muted">{evidence.claim}</p>
                 </div>
-                <a href="https://github.com/junlee122-bot/something" target="_blank" rel="noreferrer" className="inline-flex h-9 items-center justify-center gap-2 self-end rounded-md border border-border px-3 text-[10px] text-muted hover:text-foreground">Open source <ExternalLink aria-hidden="true" className="size-3" /></a>
+                <a href="https://github.com/junlee122-bot/threadline" target="_blank" rel="noreferrer" className="inline-flex h-9 items-center justify-center gap-2 self-end rounded-md border border-border px-3 text-[10px] text-muted hover:text-foreground">Open source <ExternalLink aria-hidden="true" className="size-3" /></a>
               </div>
             )}
           </section>

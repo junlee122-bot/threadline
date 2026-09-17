@@ -6,7 +6,7 @@ Threadline now includes the original **FAULTLINE — Incident Commander** as **C
 
 Threadline is an evidence-native software intelligence command center. It connects intent, code, deployments, runtime telemetry, and customer impact into one time-aware causal thread—then puts human approval and recovery verification around AI-proposed actions.
 
-[![CI](https://github.com/junlee122-bot/something/actions/workflows/ci.yml/badge.svg)](https://github.com/junlee122-bot/something/actions/workflows/ci.yml)
+[![CI](https://github.com/junlee122-bot/threadline/actions/workflows/ci.yml/badge.svg)](https://github.com/junlee122-bot/threadline/actions/workflows/ci.yml)
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![WCAG](https://img.shields.io/badge/accessibility-WCAG%202.2%20AA-B8F66A)](https://www.w3.org/WAI/standards-guidelines/wcag/)
@@ -88,8 +88,8 @@ Requirements:
 - npm 11 or newer
 
 ```bash
-git clone https://github.com/junlee122-bot/something.git
-cd something
+git clone https://github.com/junlee122-bot/threadline.git
+cd threadline
 npm install
 npm run dev
 ```

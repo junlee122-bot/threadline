@@ -69,7 +69,7 @@ export default function Home() {
           <a href="#principles" className="transition-colors hover:text-foreground">Principles</a>
           <a href="#story" className="transition-colors hover:text-foreground">Live story</a>
           <Link href="/lab" className="transition-colors hover:text-foreground">Crisis Lab</Link>
-          <a href="https://github.com/junlee122-bot/something" className="transition-colors hover:text-foreground">GitHub</a>
+          <a href="https://github.com/junlee122-bot/threadline" className="transition-colors hover:text-foreground">GitHub</a>
         </nav>
         <Link
           href="/command"
@@ -246,7 +246,7 @@ export default function Home() {
                 <Link href="/lab" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-danger/25 px-5 text-sm font-medium text-danger hover:bg-danger/[0.04]">
                   <Gamepad2 aria-hidden="true" className="size-4" /> Run Crisis Lab
                 </Link>
-                <a href="https://github.com/junlee122-bot/something" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-border-strong px-5 text-sm font-medium hover:bg-white/[0.035]">
+                <a href="https://github.com/junlee122-bot/threadline" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-border-strong px-5 text-sm font-medium hover:bg-white/[0.035]">
                   <Github aria-hidden="true" className="size-4" /> View source
                 </a>
               </div>
@@ -259,7 +259,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-[1120px] flex-col gap-4 text-xs text-muted sm:flex-row sm:items-center">
           <Wordmark />
           <p className="sm:ms-auto">Concept product · Deterministic demo data · Built for the portfolio</p>
-          <a href="https://github.com/junlee122-bot/something" className="text-foreground hover:text-primary">Source</a>
+          <a href="https://github.com/junlee122-bot/threadline" className="text-foreground hover:text-primary">Source</a>
         </div>
       </footer>
     </div>
